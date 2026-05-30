@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% block title %}VELTRIX CRM{% endblock %}
+{% block content %}
+
+<!-- HERO -->
+<section class="hero">
+    <div class="hero-noise"></div>
+    <div class="hero-aurora a1"></div>
+    <div class="hero-aurora a2"></div>
+    <div class="hero-text">
+        <div class="hero-tag">🔥 {{ _('hero_tag') }}</div>
+        <h1>{{ _('hero_title_1') }} <span class="glow">VELTRIX CRM</span><br>{{ _('hero_title_2') }}</h1>
+        <p>{{ _('hero_desc') }}</p>
+        <div class="hero-btns">
+            <a href="{{ url_for('products') }}" class="btn-hero-primary">{{ _('hero_shop') }} <i class="bi bi-{% if is_rtl %}arrow-left{% else %}arrow-right{% endif %}"></i></a>
+            <a href="{{ url_for('products', sort='popular') }}" class="btn-hero-ghost">{{ _('hero_best') }}</a>
+        </div>
+        <div class="hero-stats">
+            <div class="hstat"><b>+10K</b><span>{{ _('hero_stat_clients') }}</span></div>
+            <div class="hdivider"></div>
+            <div class="hstat"><b>+500</b><span>{{ _('hero_stat_products') }}</span></div>
+            <div class="hdivider"></div>
+            <div class="hstat"><b>100%</b><span>{{ _('hero_stat_warranty') }}</span></div>
+        </div>
+    </div>
+    <div class="hero-visual">
+        <div class="hero-blob"></div>
+        <div class="hero-orbit"></div>
+        <div class="tech-ring">
+            <div class="ring-icon" style="--i:0"><img src="https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=200&q=80" alt="هواتف ذكية"></div>
+            <div class="ring-icon" style="--i:1"><img src="https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=200&q=80" alt="لابتوب"></div>
+            <div class="ring-icon" style="--i:2"><img src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=200&q=80" alt="سماعات"></div>
+            <div class="ring-icon" style="--i:3"><img src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=200&q=80" alt="ساعات ذكية"></div>
+            <div class="ring-icon" style="--i:4"><img src="https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=200&q=80" alt="كاميرات"></div>
+            <div class="ring-center">
+                <div class="ring-core">
+                    <span class="core-icon">⚡</span>
+                </div>
+            </div>
+        </div>
+        <div class="float-card fc1"><span>📦</span><div><b>{{ _('hero_free_ship') }}</b><small>{{ _('hero_free_ship_sub') }}</small></div></div>
+        <div class="float-card fc2"><span>⭐</span><div><b>4.9 / 5</b><small>{{ _('hero_rating') }}</small></div></div>
+    </div>
+</section>
+
+<!-- الفئات -->
+<section class="section">
+    <div class="section-head">
+        <h2>{{ _('section_shop_category') }} <span class="glow">{{ _('section_category') }}</span></h2>
+        <p>{{ _('section_category_sub') }}</p>
+    </div>
+    <div class="cats-grid">
+        {% for c in categories %}
+            <a href="{{ url_for('products', category=c['slug']) }}" class="cat-card">
+                <div class="cat-card-icon">
+                    <img src="{{ category_display_image(c) }}" alt="{{ c['name'] }}" loading="lazy">
+                </div>
+                <h3>{{ category_label(c) }}</h3>
+                <p>{{ _('products_count', n=c['products_count']) }}</p>
+            </a>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- المنتجات المميزة -->
+<section class="section">
+    <div class="section-head">
+        <h2>{{ _('featured') }} <span class="glow">{{ _('featured_glow') }}</span></h2>
+        <a href="{{ url_for('products') }}" class="see-all">{{ _('see_all') }} <i class="bi bi-{% if is_rtl %}arrow-left{% else %}arrow-right{% endif %}"></i></a>
+    </div>
+    <div class="products-grid">
+        {% for p in featured %}
+            {% include '_product_card.html' %}
+        {% endfor %}
+    </div>
+</section>
+
+<!-- شريط المزايا -->
+<section class="features-bar">
+    <div class="feature"><div class="feat-icon">🚀</div><div><b>شحن سريع</b><small>24-48 ساعة</small></div></div>
+    <div class="feature"><div class="feat-icon">🔒</div><div><b>دفع آمن</b><small>بروتوكول SSL</small></div></div>
+    <div class="feature"><div class="feat-icon">↩️</div><div><b>إرجاع مجاني</b><small>خلال 30 يوم</small></div></div>
+    <div class="feature"><div class="feat-icon">🎁</div><div><b>شحن مجاني</b><small>فوق 500 ج</small></div></div>
+</section>
+
+<!-- الأكثر مبيعاً -->
+<section class="section section-dark">
+    <div class="section-head">
+        <h2>🔥 {{ _('best_sellers') }} <span class="glow">{{ _('selling') }}</span></h2>
+        <a href="{{ url_for('products', sort='popular') }}" class="see-all">{{ _('see_all') }} <i class="bi bi-{% if is_rtl %}arrow-left{% else %}arrow-right{% endif %}"></i></a>
+    </div>
+    <div class="products-grid">
+        {% for p in best_sellers %}
+            {% include '_product_card.html' %}
+        {% endfor %}
+    </div>
+</section>
+
+{% endblock %}

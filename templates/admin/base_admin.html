@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="{{ current_lang }}" dir="{% if is_rtl %}rtl{% else %}ltr{% endif %}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="application-name" content="VELTRIX CRM">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/logo.png') }}">
+    <title>{% block title %}لوحة التحكم — VELTRIX CRM{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+</head>
+<body class="admin-body lang-{{ current_lang }}">
+
+{% include '_lang_switcher.html' %}
+
+<div class="admin-layout">
+    <!-- الشريط الجانبي -->
+    <aside class="admin-sidebar" id="adminSidebar">
+        <div class="admin-logo">
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="VELTRIX CRM" class="admin-logo-img" width="160" height="48">
+            <span class="admin-tag">لوحة التحكم</span>
+        </div>
+
+        <nav class="admin-nav">
+            <div class="nav-section-label">الرئيسية</div>
+            <a href="{{ url_for('admin_dashboard') }}" class="admin-nav-link {% if request.endpoint=='admin_dashboard' %}active{% endif %}">
+                <i class="bi bi-speedometer2"></i> لوحة التحكم
+            </a>
+
+            <div class="nav-section-label">المتجر</div>
+            <a href="{{ url_for('admin_categories') }}" class="admin-nav-link {% if 'categor' in request.endpoint %}active{% endif %}">
+                <i class="bi bi-tags"></i> الفئات
+            </a>
+            <a href="{{ url_for('admin_products') }}" class="admin-nav-link {% if 'product' in request.endpoint %}active{% endif %}">
+                <i class="bi bi-box-seam"></i> المنتجات
+            </a>
+            <a href="{{ url_for('admin_orders') }}" class="admin-nav-link {% if 'order' in request.endpoint %}active{% endif %}">
+                <i class="bi bi-bag-check"></i> الطلبات
+                {% if pending_orders_count and pending_orders_count > 0 %}
+                    <span class="nav-badge">{{ pending_orders_count }}</span>
+                {% endif %}
+            </a>
+
+            <div class="nav-section-label">إدارة العملاء (CRM)</div>
+            <a href="{{ url_for('admin_customers') }}" class="admin-nav-link {% if 'customer' in request.endpoint %}active{% endif %}">
+                <i class="bi bi-people"></i> العملاء
+            </a>
+
+            <div class="nav-section-label">أخرى</div>
+            <a href="{{ url_for('index') }}" class="admin-nav-link" target="_blank">
+                <i class="bi bi-shop"></i> عرض VELTRIX CRM
+            </a>
+            <a href="{{ url_for('logout') }}" class="admin-nav-link danger">
+                <i class="bi bi-box-arrow-right"></i> تسجيل الخروج
+            </a>
+        </nav>
+    </aside>
+
+    <!-- المحتوى الرئيسي -->
+    <div class="admin-main">
+        <!-- الهيدر -->
+        <header class="admin-topbar">
+            <div class="topbar-right">
+                <button class="sidebar-toggle" onclick="toggleSidebar()">
+                    <i class="bi bi-list"></i>
+                </button>
+                <div class="breadcrumb-admin">
+                    <a href="{{ url_for('admin_dashboard') }}">الرئيسية</a>
+                    {% if request.endpoint != 'admin_dashboard' %}
+                        <i class="bi bi-chevron-left"></i>
+                        <span>{% block breadcrumb %}{% endblock %}</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="topbar-left">
+                {% if pending_orders_count and pending_orders_count > 0 %}
+                    <a href="{{ url_for('admin_orders', status='pending') }}" class="topbar-alert">
+                        <i class="bi bi-bell-fill"></i>
+                        {{ pending_orders_count }} طلب جديد
+                    </a>
+                {% endif %}
+                <div class="topbar-user">
+                    <i class="bi bi-person-circle"></i>
+                    <span>{{ current_user['name'] if current_user else 'مسؤول' }}</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- رسائل Flash -->
+        {% with msgs = get_flashed_messages(with_categories=true) %}
+            {% if msgs %}
+                <div class="flash-wrap">
+                    {% for cat, msg in msgs %}
+                        <div class="flash flash-{{ cat }}">
+                            <i class="bi bi-{% if cat=='success' %}check-circle{% elif cat=='danger' %}x-circle{% elif cat=='warning' %}exclamation-triangle{% else %}info-circle{% endif %}"></i>
+                            {{ msg }}
+                            <button onclick="this.parentElement.remove()">×</button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <!-- المحتوى -->
+        <div class="admin-content">
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+</div>
+
+<div class="lux-cursor" id="luxCursor"></div>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+</body>
+</html>

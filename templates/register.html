@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% block body_class %}auth-lux-body{% endblock %}
+{% block title %}{{ _('auth_register_title') }} — VELTRIX CRM{% endblock %}
+{% block content %}
+<div class="auth-lux-page">
+    <div class="auth-lux-wrap">
+        {% include '_auth_lamp.html' %}
+        <div class="auth-lux-card" id="authBox">
+            <div class="auth-lux-brand">
+                <h1 class="auth-lux-title"><span class="brand-main">VELTRIX</span></h1>
+                <p class="auth-lux-tagline">{{ _('auth_tagline_register') }}</p>
+            </div>
+
+            <div class="auth-lux-tabs">
+                <a href="{{ url_for('register') }}" class="auth-lux-tab active">{{ _('auth_register') }}</a>
+                <a href="{{ url_for('login') }}" class="auth-lux-tab">{{ _('auth_login') }}</a>
+            </div>
+
+            <form method="POST" action="{{ url_for('register') }}" class="auth-lux-form">
+                <div class="auth-lux-field">
+                    <label for="reg-name">{{ _('full_name') }}</label>
+                    <input type="text" id="reg-name" name="name" required minlength="3"
+                           placeholder="{% if current_lang == 'ar' %}أحمد محمد{% else %}John Doe{% endif %}"
+                           value="{{ request.form.get('name','') }}">
+                </div>
+                <div class="auth-lux-field">
+                    <label for="reg-email">{{ _('email') }}</label>
+                    <input type="email" id="reg-email" name="email" required placeholder="example@email.com"
+                           value="{{ request.form.get('email','') }}">
+                </div>
+                <div class="auth-lux-field">
+                    <label for="reg-phone">{{ _('phone_optional') }}</label>
+                    <input type="tel" id="reg-phone" name="phone" placeholder="05xxxxxxxx"
+                           value="{{ request.form.get('phone','') }}">
+                </div>
+                <div class="auth-lux-field">
+                    <label for="pw1">{{ _('password') }}</label>
+                    <div class="auth-lux-pw">
+                        <input type="password" name="password" id="pw1" required minlength="8" placeholder="••••••••">
+                        <button type="button" class="auth-lux-eye" onclick="togglePw('pw1','e1')" aria-label="{{ _('show_password') }}">
+                            <i class="bi bi-eye" id="e1"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="auth-lux-field">
+                    <label for="pw2">{{ _('confirm_password') }}</label>
+                    <div class="auth-lux-pw">
+                        <input type="password" name="confirm_password" id="pw2" required minlength="8" placeholder="••••••••">
+                        <button type="button" class="auth-lux-eye" onclick="togglePw('pw2','e2')" aria-label="{{ _('show_password') }}">
+                            <i class="bi bi-eye" id="e2"></i>
+                        </button>
+                    </div>
+                </div>
+                <button type="submit" class="auth-lux-submit">{{ _('create_account') }}</button>
+            </form>
+
+            <a href="{{ url_for('index') }}" class="auth-lux-home">
+                <i class="bi bi-{% if is_rtl %}arrow-right{% else %}arrow-left{% endif %}"></i> {{ _('back_home') }}
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/auth-lamp.js') }}"></script>
+<script>
+function togglePw(id, eyeId) {
+    const inp = document.getElementById(id);
+    const eye = document.getElementById(eyeId);
+    if (inp.type === 'password') { inp.type = 'text'; eye.className = 'bi bi-eye-slash'; }
+    else { inp.type = 'password'; eye.className = 'bi bi-eye'; }
+}
+</script>
+{% endblock %}

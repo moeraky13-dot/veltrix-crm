@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% block title %}تفاصيل الطلب — VELTRIX CRM{% endblock %}
+{% block content %}
+{% set status_labels = {'pending': ('في الانتظار','warning'), 'confirmed': ('مؤكد','info'), 'processing': ('قيد التجهيز','primary'), 'shipped': ('تم الشحن','info'), 'delivered': ('تم التسليم','success'), 'cancelled': ('ملغي','danger')} %}
+{% set lbl = status_labels.get(order['status'], ('غير معروف','secondary')) %}
+<div class="page-wrap">
+    <div class="order-detail-header">
+        <div>
+            <h1><i class="bi bi-receipt"></i> طلب رقم #{{ order['order_number'] }}</h1>
+            <p class="order-date-text">{{ order['created_at'][:16] }}</p>
+        </div>
+        <span class="status-badge badge-{{ lbl[1] }} status-big">{{ lbl[0] }}</span>
+    </div>
+
+    <div class="order-detail-grid">
+        <!-- المنتجات -->
+        <div class="order-items-card">
+            <h3><i class="bi bi-box-seam"></i> المنتجات</h3>
+            {% for item in items %}
+                <div class="order-item-row">
+                    <div class="order-item-icon">{{ get_icon(item['product_name']) }}</div>
+                    <div class="order-item-info">
+                        <b>{{ item['product_name'] }}</b>
+                        <span>{{ item['quantity'] }} × {{ "%.2f"|format(item['price']) }} ج</span>
+                    </div>
+                    <div class="order-item-total">{{ "%.2f"|format(item['quantity'] * item['price']) }} ج</div>
+                </div>
+            {% endfor %}
+            <hr>
+            <div class="order-totals">
+                <div class="total-row-sm"><span>المجموع الفرعي</span><span>{{ "%.2f"|format(order['subtotal']) }} ج</span></div>
+                <div class="total-row-sm"><span>الشحن</span><span>{% if order['shipping_cost']==0 %}مجاني{% else %}{{ "%.2f"|format(order['shipping_cost']) }} ج{% endif %}</span></div>
+                <div class="total-row-sm total-final"><span><b>الإجمالي</b></span><span><b>{{ "%.2f"|format(order['total']) }} ج</b></span></div>
+            </div>
+        </div>
+
+        <!-- معلومات الشحن -->
+        <div class="shipping-info-card">
+            <h3><i class="bi bi-truck"></i> معلومات الشحن</h3>
+            <p><b>الاسم:</b> {{ order['shipping_name'] }}</p>
+            <p><b>الجوال:</b> {{ order['shipping_phone'] }}</p>
+            <p><b>العنوان:</b> {{ order['shipping_address'] }}</p>
+            <p><b>المدينة:</b> {{ order['shipping_city'] }}</p>
+            {% if order['notes'] %}<p><b>ملاحظات:</b> {{ order['notes'] }}</p>{% endif %}
+            {% if order['admin_notes'] %}
+                <div class="admin-note"><i class="bi bi-chat-text"></i> <b>ملاحظة المتجر:</b> {{ order['admin_notes'] }}</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- مراحل الطلب -->
+    <div class="order-progress">
+        {% set steps = [('pending','clock','في الانتظار'), ('confirmed','check-circle','مؤكد'), ('processing','gear','جاري التجهيز'), ('shipped','truck','شُحن'), ('delivered','house-check','تم التسليم')] %}
+        {% set current_idx = {'pending':0,'confirmed':1,'processing':2,'shipped':3,'delivered':4}.get(order['status'],0) %}
+        {% for s_key, s_icon, s_label in steps %}
+            {% set s_idx = loop.index0 %}
+            <div class="progress-step {% if s_idx < current_idx %}done{% elif s_idx == current_idx and order['status']!='cancelled' %}active{% endif %}">
+                <div class="step-circle"><i class="bi bi-{{ s_icon }}"></i></div>
+                <span>{{ s_label }}</span>
+            </div>
+            {% if not loop.last %}<div class="step-line {% if s_idx < current_idx %}done{% endif %}"></div>{% endif %}
+        {% endfor %}
+    </div>
+
+    <a href="{{ url_for('my_orders') }}" class="btn-back"><i class="bi bi-arrow-right"></i> العودة للطلبات</a>
+</div>
+{% endblock %}

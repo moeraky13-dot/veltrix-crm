@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% block title %}إتمام الطلب — VELTRIX CRM{% endblock %}
+{% block content %}
+<div class="page-wrap">
+    <h1 class="page-title"><i class="bi bi-bag-check"></i> إتمام الطلب</h1>
+    <div class="checkout-layout">
+        <!-- نموذج الشحن -->
+        <div class="checkout-form-box">
+            <h3><i class="bi bi-truck"></i> بيانات الشحن</h3>
+            <form method="POST" action="{{ url_for('checkout') }}">
+                <div class="form-grid-2">
+                    <div class="fg">
+                        <label>الاسم الكامل *</label>
+                        <input type="text" name="shipping_name" required
+                               value="{{ user['name'] if user else '' }}" placeholder="أحمد محمد">
+                    </div>
+                    <div class="fg">
+                        <label>رقم الجوال *</label>
+                        <input type="tel" name="shipping_phone" required
+                               value="{{ user['phone'] if user and user['phone'] else '' }}" placeholder="05xxxxxxxx">
+                    </div>
+                </div>
+                <div class="fg">
+                    <label>العنوان التفصيلي *</label>
+                    <input type="text" name="shipping_address" required
+                           value="{{ user['address'] if user and user['address'] else '' }}"
+                           placeholder="الشارع، الحي، رقم المبنى">
+                </div>
+                <div class="fg">
+                    <label>المدينة *</label>
+                    <select name="shipping_city" required class="f-input">
+                        <option value="">اختر المدينة</option>
+                        {% for city in ['الرياض','جدة','مكة المكرمة','المدينة المنورة','الدمام','الخبر','الطائف','تبوك','بريدة','القصيم','حائل','أبها','جازان','نجران','الجوف'] %}
+                            <option value="{{ city }}">{{ city }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="fg">
+                    <label>ملاحظات إضافية</label>
+                    <textarea name="notes" rows="3" placeholder="أي تعليمات للتوصيل..."></textarea>
+                </div>
+
+                <!-- ملخص الطلب في نموذج الشحن -->
+                <div class="checkout-summary-mini">
+                    <h4>ملخص الطلب</h4>
+                    {% for item in items %}
+                        <div class="mini-item">
+                            <span>{{ item['name'] }} × {{ item['quantity'] }}</span>
+                            <span>{{ "%.2f"|format(item['subtotal']) }} ج</span>
+                        </div>
+                    {% endfor %}
+                    <hr>
+                    <div class="mini-item"><span>المجموع</span><span>{{ "%.2f"|format(subtotal) }} ج</span></div>
+                    <div class="mini-item">
+                        <span>الشحن</span>
+                        <span>{% if shipping==0 %}<b class="green">مجاني</b>{% else %}{{ "%.2f"|format(shipping) }} ج{% endif %}</span>
+                    </div>
+                    <div class="mini-item total-mini">
+                        <span><b>الإجمالي</b></span>
+                        <span><b>{{ "%.2f"|format(total) }} ج</b></span>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-checkout-submit">
+                    <i class="bi bi-check-circle-fill"></i> تأكيد الطلب
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

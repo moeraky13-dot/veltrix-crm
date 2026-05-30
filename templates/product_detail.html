@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+{% block title %}{{ product['name'] }} — VELTRIX CRM{% endblock %}
+{% block content %}
+<div class="page-wrap">
+
+    <!-- Breadcrumb -->
+    <nav class="breadcrumb">
+        <a href="{{ url_for('index') }}">الرئيسية</a>
+        <i class="bi bi-chevron-left"></i>
+        <a href="{{ url_for('products') }}">المنتجات</a>
+        {% if product['cat_name'] %}
+            <i class="bi bi-chevron-left"></i>
+            <a href="{{ url_for('products', category=product['cat_slug']) }}">{{ product['cat_name'] }}</a>
+        {% endif %}
+        <i class="bi bi-chevron-left"></i>
+        <span>{{ product['name'] }}</span>
+    </nav>
+
+    <!-- تفاصيل المنتج -->
+    <div class="detail-grid">
+        <div class="detail-img-col">
+            <div class="detail-img-box">
+                {% set disc = ((product['old_price'] - product['price']) / product['old_price'] * 100)|int if product['old_price'] else 0 %}
+                {% if disc > 0 %}<div class="detail-badge">خصم {{ disc }}%</div>{% endif %}
+                {% if product['image'] and product['image'] != 'default.jpg' %}
+                    <img src="{{ product['image'] }}" alt="{{ product['name'] }}" class="detail-product-img">
+                {% else %}
+                    <div class="detail-emoji">{{ get_icon(product['name']) }}</div>
+                {% endif %}
+            </div>
+            <div class="detail-stats">
+                <span><i class="bi bi-eye"></i> {{ product['views_count'] }} مشاهدة</span>
+                <span><i class="bi bi-bag-check"></i> {{ product['sales_count'] }} مبيعة</span>
+                {% if product['cat_name'] %}<span><i class="bi bi-tag"></i> {{ product['cat_name'] }}</span>{% endif %}
+            </div>
+        </div>
+
+        <div class="detail-info-col">
+            {% if product['brand'] %}<div class="detail-brand">{{ product['brand'] }}</div>{% endif %}
+            <h1 class="detail-title">{{ product['name'] }}</h1>
+
+            <div class="detail-price-row">
+                <span class="detail-price">{{ "%.2f"|format(product['price']) }} ج</span>
+                {% if product['old_price'] %}
+                    <span class="detail-old-price">{{ "%.2f"|format(product['old_price']) }} ج</span>
+                    <span class="detail-disc-badge">وفر {{ disc }}%</span>
+                {% endif %}
+            </div>
+
+            <div class="detail-stock-badge {% if product['stock']==0 %}out{% elif product['stock']<=5 %}low{% endif %}">
+                {% if product['stock']==0 %}<i class="bi bi-x-circle-fill"></i> نفد المخزون
+                {% elif product['stock']<=5 %}<i class="bi bi-exclamation-circle-fill"></i> باقي {{ product['stock'] }} قطع فقط! أسرع
+                {% else %}<i class="bi bi-check-circle-fill"></i> متوفر ({{ product['stock'] }} قطعة){% endif %}
+            </div>
+
+            <div class="detail-desc">
+                <h3>وصف المنتج</h3>
+                <p>{{ product['description'] }}</p>
+            </div>
+
+            {% if product['stock'] > 0 %}
+                {% if current_user %}
+                    <form action="{{ url_for('cart_add', pid=product['id']) }}" method="post" class="add-cart-form">
+                        <div class="qty-row">
+                            <label>الكمية:</label>
+                            <div class="qty-ctrl">
+                                <button type="button" onclick="chQty(-1,{{ product['stock'] }})">−</button>
+                                <input type="number" name="quantity" id="qtyInput" value="1"
+                                       min="1" max="{{ product['stock'] }}" class="qty-in">
+                                <button type="button" onclick="chQty(1,{{ product['stock'] }})">+</button>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-cart-big">
+                            <i class="bi bi-cart-plus-fill"></i> أضف إلى السلة
+                        </button>
+                    </form>
+                {% else %}
+                    <div class="login-prompt">
+                        <p>سجل دخولك لإضافة المنتج للسلة</p>
+                        <a href="{{ url_for('login') }}" class="btn-cart-big">
+                            <i class="bi bi-box-arrow-in-right"></i> تسجيل الدخول للشراء
+                        </a>
+                    </div>
+                {% endif %}
+            {% else %}
+                <button class="btn-cart-big" disabled><i class="bi bi-x-circle"></i> نفد المخزون</button>
+            {% endif %}
+
+            <div class="benefits-row">
+                <div class="benefit"><i class="bi bi-truck"></i> شحن سريع 24-48 ساعة</div>
+                <div class="benefit"><i class="bi bi-arrow-return-left"></i> إرجاع مجاني 30 يوم</div>
+                <div class="benefit"><i class="bi bi-shield-check"></i> ضمان رسمي</div>
+                <div class="benefit"><i class="bi bi-credit-card"></i> دفع آمن ومشفر</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- منتجات مشابهة -->
+    {% if similar %}
+        <div class="section">
+            <div class="section-head">
+                <h2>منتجات <span class="glow">مشابهة</span></h2>
+            </div>
+            <div class="products-grid">
+                {% for p in similar %}{% include '_product_card.html' %}{% endfor %}
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+function chQty(d, max) {
+    const inp = document.getElementById('qtyInput');
+    let v = parseInt(inp.value) + d;
+    if (v < 1) v = 1;
+    if (v > max) v = max;
+    inp.value = v;
+}
+</script>
+{% endblock %}

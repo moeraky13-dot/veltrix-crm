@@ -1,0 +1,106 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}المنتجات — VELTRIX CRM{% endblock %}
+{% block breadcrumb %}المنتجات{% endblock %}
+{% block content %}
+
+<div class="admin-page-header">
+    <h2><i class="bi bi-box-seam"></i> إدارة المنتجات</h2>
+    <a href="{{ url_for('admin_add_product') }}" class="btn-admin-primary">
+        <i class="bi bi-plus-lg"></i> إضافة منتج
+    </a>
+</div>
+
+<!-- البحث -->
+<form method="get" class="admin-search-bar">
+    <input type="text" name="q" placeholder="ابحث عن منتج..." value="{{ q }}" class="admin-search-input">
+    <button type="submit" class="btn-admin-search"><i class="bi bi-search"></i></button>
+    {% if q %}<a href="{{ url_for('admin_products') }}" class="btn-admin-reset">×</a>{% endif %}
+</form>
+
+<div class="admin-table-card">
+    <div class="table-info">إجمالي: {{ total }} منتج</div>
+    <div class="admin-table-wrap">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>المنتج</th>
+                    <th>الفئة</th>
+                    <th>السعر</th>
+                    <th>المخزون</th>
+                    <th>المبيعات</th>
+                    <th>الحالة</th>
+                    <th>الإجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in items %}
+                    <tr class="{% if not p['is_active'] %}row-inactive{% endif %}">
+                        <td>{{ p['id'] }}</td>
+                        <td>
+                            <div class="product-cell">
+                                <span class="product-cell-icon">{{ get_icon(p['name']) }}</span>
+                                <div>
+                                    <b>{{ p['name'] }}</b>
+                                    <small>{{ p['brand'] or '' }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>{{ p['cat_name'] or '—' }}</td>
+                        <td>
+                            {{ "%.2f"|format(p['price']) }} ج
+                            {% if p['old_price'] %}
+                                <br><small class="old-price-sm">{{ "%.2f"|format(p['old_price']) }}</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="stock-indicator {% if p['stock']==0 %}out{% elif p['stock']<=5 %}low{% else %}ok{% endif %}">
+                                {{ p['stock'] }}
+                            </span>
+                        </td>
+                        <td><span class="sales-num">{{ p['sales_count'] }}</span></td>
+                        <td>
+                            {% if p['is_active'] %}
+                                <span class="status-badge badge-success">نشط</span>
+                            {% else %}
+                                <span class="status-badge badge-danger">محذوف</span>
+                            {% endif %}
+                            {% if p['is_featured'] %}
+                                <span class="status-badge badge-warning">⭐ مميز</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="action-btns">
+                                <a href="{{ url_for('product_detail', pid=p['id']) }}" target="_blank"
+                                   class="btn-act btn-view" title="عرض"><i class="bi bi-eye"></i></a>
+                                <a href="{{ url_for('admin_edit_product', pid=p['id']) }}"
+                                   class="btn-act btn-edit" title="تعديل"><i class="bi bi-pencil"></i></a>
+                                {% if p['is_active'] %}
+                                    <form action="{{ url_for('admin_delete_product', pid=p['id']) }}" method="post"
+                                          onsubmit="return confirm('هل تريد حذف هذا المنتج؟')">
+                                        <button type="submit" class="btn-act btn-del" title="حذف">
+                                            <i class="bi bi-trash3"></i>
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="8" class="no-data">لا توجد منتجات</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if total_pages > 1 %}
+        <div class="pagination">
+            {% for i in range(1, total_pages+1) %}
+                <a href="?page={{ i }}&q={{ q }}"
+                   class="page-btn {% if i==page %}active{% endif %}">{{ i }}</a>
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

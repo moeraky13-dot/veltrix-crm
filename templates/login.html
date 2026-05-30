@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block body_class %}auth-lux-body{% endblock %}
+{% block title %}{{ _('auth_login') }} — VELTRIX CRM{% endblock %}
+{% block content %}
+<div class="auth-lux-page">
+    <div class="auth-lux-wrap">
+        {% include '_auth_lamp.html' %}
+        <div class="auth-lux-card" id="authBox">
+            <div class="auth-lux-brand">
+                <h1 class="auth-lux-title"><span class="brand-main">VELTRIX</span></h1>
+                <p class="auth-lux-tagline">{{ _('auth_tagline_login') }}</p>
+            </div>
+
+            <div class="auth-lux-tabs">
+                <a href="{{ url_for('register') }}" class="auth-lux-tab">{{ _('auth_register') }}</a>
+                <a href="{{ url_for('login') }}" class="auth-lux-tab active">{{ _('auth_login') }}</a>
+            </div>
+
+            <form method="POST" action="{{ url_for('login') }}" class="auth-lux-form">
+                <div class="auth-lux-field">
+                    <label for="login-email">{{ _('email') }}</label>
+                    <input type="email" id="login-email" name="email" required placeholder="example@email.com"
+                           value="{{ request.form.get('email','') }}">
+                </div>
+                <div class="auth-lux-field">
+                    <label for="pw">{{ _('password') }}</label>
+                    <div class="auth-lux-pw">
+                        <input type="password" name="password" id="pw" required placeholder="••••••••">
+                        <button type="button" class="auth-lux-eye" onclick="togglePw('pw','eye1')" aria-label="{{ _('show_password') }}">
+                            <i class="bi bi-eye" id="eye1"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="auth-lux-options">
+                    <label class="auth-lux-remember">
+                        <input type="checkbox" name="remember"> {{ _('remember_me') }}
+                    </label>
+                    <a href="#" class="auth-lux-forgot">{{ _('forgot_password') }}</a>
+                </div>
+                <button type="submit" class="auth-lux-submit">{{ _('auth_login') }}</button>
+            </form>
+
+            <a href="{{ url_for('index') }}" class="auth-lux-home">
+                <i class="bi bi-{% if is_rtl %}arrow-right{% else %}arrow-left{% endif %}"></i> {{ _('back_home') }}
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/auth-lamp.js') }}"></script>
+<script>
+function togglePw(id, eyeId) {
+    const inp = document.getElementById(id);
+    const eye = document.getElementById(eyeId);
+    if (inp.type === 'password') { inp.type = 'text'; eye.className = 'bi bi-eye-slash'; }
+    else { inp.type = 'password'; eye.className = 'bi bi-eye'; }
+}
+</script>
+{% endblock %}

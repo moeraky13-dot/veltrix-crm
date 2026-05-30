@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block title %}ملفي الشخصي — VELTRIX CRM{% endblock %}
+{% block content %}
+<div class="page-wrap">
+    <h1 class="page-title"><i class="bi bi-person-circle"></i> ملفي الشخصي</h1>
+    <div class="profile-layout">
+        <div class="profile-form-card">
+            <h3>بياناتي الشخصية</h3>
+            <form method="POST" action="{{ url_for('profile') }}">
+                <div class="fg">
+                    <label>الاسم الكامل</label>
+                    <input type="text" name="name" required value="{{ user['name'] }}">
+                </div>
+                <div class="fg">
+                    <label>البريد الإلكتروني</label>
+                    <input type="email" value="{{ user['email'] }}" disabled>
+                    <small>لا يمكن تغيير البريد الإلكتروني</small>
+                </div>
+                <div class="fg">
+                    <label>رقم الجوال</label>
+                    <input type="tel" name="phone" value="{{ user['phone'] or '' }}">
+                </div>
+                <div class="fg">
+                    <label>العنوان</label>
+                    <textarea name="address" rows="3">{{ user['address'] or '' }}</textarea>
+                </div>
+                <hr>
+                <h4>تغيير كلمة المرور</h4>
+                <div class="fg">
+                    <label>كلمة المرور الحالية</label>
+                    <input type="password" name="old_password" placeholder="اتركه فارغاً إن لم تريد التغيير">
+                </div>
+                <div class="fg">
+                    <label>كلمة المرور الجديدة</label>
+                    <input type="password" name="new_password" minlength="8" placeholder="8 أحرف على الأقل">
+                </div>
+                <button type="submit" class="btn-primary">
+                    <i class="bi bi-check-circle"></i> حفظ التغييرات
+                </button>
+            </form>
+        </div>
+        <div class="profile-stats-col">
+            <div class="pstat-card">
+                <div class="pstat-icon">📦</div>
+                <div class="pstat-val">{{ orders_count }}</div>
+                <div class="pstat-lbl">طلب</div>
+            </div>
+            <div class="pstat-card">
+                <div class="pstat-icon">💰</div>
+                <div class="pstat-val">{{ "%.0f"|format(total_spent) }}</div>
+                <div class="pstat-lbl">ريال إجمالي</div>
+            </div>
+            <a href="{{ url_for('my_orders') }}" class="quick-link-btn">
+                <i class="bi bi-bag-check"></i> طلباتي
+            </a>
+            <a href="{{ url_for('cart') }}" class="quick-link-btn">
+                <i class="bi bi-cart3"></i> السلة
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

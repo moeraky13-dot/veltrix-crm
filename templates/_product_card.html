@@ -1,0 +1,50 @@
+<div class="product-card">
+    {% set disc = ((p['old_price'] - p['price']) / p['old_price'] * 100)|int if p['old_price'] else 0 %}
+    {% if disc > 0 %}
+        <div class="p-badge badge-sale">خصم {{ disc }}%</div>
+    {% elif p['is_featured'] %}
+        <div class="p-badge badge-feat">⭐ مميز</div>
+    {% endif %}
+
+    <a href="{{ url_for('product_detail', pid=p['id']) }}" class="p-img-link">
+        <div class="p-img">
+            {% if p['image'] and p['image'] != 'default.jpg' %}
+                <img src="{{ p['image'] }}" alt="{{ p['name'] }}" loading="lazy">
+            {% else %}
+                <span>{{ get_icon(p['name']) }}</span>
+            {% endif %}
+        </div>
+    </a>
+
+    <div class="p-info">
+        {% if p['brand'] %}<p class="p-brand">{{ p['brand'] }}</p>{% endif %}
+        <h3 class="p-name">
+            <a href="{{ url_for('product_detail', pid=p['id']) }}">{{ p['name'] }}</a>
+        </h3>
+        <div class="p-meta">
+            <span><i class="bi bi-eye"></i> {{ p['views_count'] }}</span>
+            <span><i class="bi bi-bag"></i> {{ p['sales_count'] }}</span>
+        </div>
+        <div class="p-price">
+            <span class="price-now">{{ "%.2f"|format(p['price']) }} ج</span>
+            {% if p['old_price'] %}
+                <span class="price-old">{{ "%.2f"|format(p['old_price']) }}</span>
+            {% endif %}
+        </div>
+        <div class="p-stock {% if p['stock']==0 %}out{% elif p['stock']<=5 %}low{% endif %}">
+            {% if p['stock']==0 %}<i class="bi bi-x-circle"></i> نفد المخزون
+            {% elif p['stock']<=5 %}<i class="bi bi-exclamation-circle"></i> باقي {{ p['stock'] }} فقط
+            {% else %}<i class="bi bi-check-circle"></i> متوفر{% endif %}
+        </div>
+        {% if current_user and p['stock'] > 0 %}
+            <form action="{{ url_for('cart_add', pid=p['id']) }}" method="post">
+                <input type="hidden" name="quantity" value="1">
+                <button type="submit" class="btn-add-cart"><i class="bi bi-cart-plus"></i> أضف للسلة</button>
+            </form>
+        {% elif not current_user %}
+            <a href="{{ url_for('login') }}" class="btn-add-cart"><i class="bi bi-cart-plus"></i> أضف للسلة</a>
+        {% else %}
+            <button class="btn-add-cart" disabled>نفد المخزون</button>
+        {% endif %}
+    </div>
+</div>

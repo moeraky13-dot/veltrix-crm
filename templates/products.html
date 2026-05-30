@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% block title %}المنتجات — VELTRIX CRM{% endblock %}
+{% block content %}
+<div class="page-wrap">
+    <div class="page-layout">
+
+        <!-- الشريط الجانبي -->
+        <aside class="sidebar">
+            <div class="sidebar-box">
+                <h3><i class="bi bi-funnel"></i> تصفية</h3>
+                <form method="get" id="filterForm">
+                    <div class="filter-group">
+                        <label>بحث</label>
+                        <input type="text" name="q" class="f-input" placeholder="ابحث..." value="{{ q }}">
+                    </div>
+                    <div class="filter-group">
+                        <label>الفئة</label>
+                        {% for c in categories %}
+                            <label class="radio-label {% if category_slug==c['slug'] %}active{% endif %}">
+                                <input type="radio" name="category" value="{{ c['slug'] }}"
+                                       {% if category_slug==c['slug'] %}checked{% endif %}
+                                       onchange="this.form.submit()">
+                                {{ c['icon'] }} {{ c['name'] }} <small>({{ c['products_count'] }})</small>
+                            </label>
+                        {% endfor %}
+                        <label class="radio-label {% if not category_slug %}active{% endif %}">
+                            <input type="radio" name="category" value=""
+                                   {% if not category_slug %}checked{% endif %}
+                                   onchange="this.form.submit()"> الكل
+                        </label>
+                    </div>
+                    <div class="filter-group">
+                        <label>نطاق السعر (ج)</label>
+                        <div class="price-range">
+                            <input type="number" name="min_price" class="f-input" placeholder="من" value="{{ min_price or '' }}">
+                            <span>—</span>
+                            <input type="number" name="max_price" class="f-input" placeholder="إلى" value="{{ max_price or '' }}">
+                        </div>
+                    </div>
+                    <div class="filter-group">
+                        <label>الترتيب</label>
+                        <select name="sort" class="f-input" onchange="this.form.submit()">
+                            <option value="popular" {% if sort=='popular' %}selected{% endif %}>الأكثر مبيعاً</option>
+                            <option value="newest" {% if sort=='newest' %}selected{% endif %}>الأحدث</option>
+                            <option value="price_asc" {% if sort=='price_asc' %}selected{% endif %}>السعر: الأقل أولاً</option>
+                            <option value="price_desc" {% if sort=='price_desc' %}selected{% endif %}>السعر: الأعلى أولاً</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn-filter">تطبيق</button>
+                    <a href="{{ url_for('products') }}" class="btn-reset">إعادة ضبط</a>
+                </form>
+            </div>
+        </aside>
+
+        <!-- المحتوى -->
+        <main class="products-main">
+            <div class="products-header">
+                <h2>
+                    {% if current_category %}{{ current_category['icon'] }} {{ current_category['name'] }}
+                    {% elif q %}نتائج: "{{ q }}"
+                    {% else %}جميع المنتجات{% endif %}
+                </h2>
+                <span class="total-count">{{ total }} منتج</span>
+            </div>
+
+            {% if items %}
+                <div class="products-grid">
+                    {% for p in items %}{% include '_product_card.html' %}{% endfor %}
+                </div>
+
+                <!-- التقسيم للصفحات -->
+                {% if total_pages > 1 %}
+                    <div class="pagination">
+                        {% if page > 1 %}
+                            <a href="?page={{ page-1 }}&q={{ q }}&category={{ category_slug }}&sort={{ sort }}" class="page-btn">
+                                <i class="bi bi-chevron-right"></i>
+                            </a>
+                        {% endif %}
+                        {% for i in range(1, total_pages+1) %}
+                            {% if i==page or (i>=page-2 and i<=page+2) or i==1 or i==total_pages %}
+                                <a href="?page={{ i }}&q={{ q }}&category={{ category_slug }}&sort={{ sort }}"
+                                   class="page-btn {% if i==page %}active{% endif %}">{{ i }}</a>
+                            {% elif i==page-3 or i==page+3 %}
+                                <span class="page-btn">…</span>
+                            {% endif %}
+                        {% endfor %}
+                        {% if page < total_pages %}
+                            <a href="?page={{ page+1 }}&q={{ q }}&category={{ category_slug }}&sort={{ sort }}" class="page-btn">
+                                <i class="bi bi-chevron-left"></i>
+                            </a>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">🔍</div>
+                    <h3>لا توجد منتجات</h3>
+                    <p>لم نجد نتائج. جرب كلمات مختلفة أو أعد ضبط الفلاتر.</p>
+                    <a href="{{ url_for('products') }}" class="btn-primary">عرض الكل</a>
+                </div>
+            {% endif %}
+        </main>
+    </div>
+</div>
+{% endblock %}

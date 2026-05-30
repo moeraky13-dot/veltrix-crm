@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}خطأ {{ code }} — VELTRIX CRM{% endblock %}
+{% block content %}
+<div class="error-page">
+    <div class="error-code">{{ code }}</div>
+    <div class="error-icon">{% if code == 404 %}🔍{% elif code == 403 %}🔒{% else %}⚠️{% endif %}</div>
+    <h2>{{ message }}</h2>
+    <p>{% if code == 404 %}الصفحة التي تبحث عنها غير موجودة أو تم نقلها.
+    {% elif code == 403 %}ليس لديك الصلاحية للوصول إلى هذه الصفحة.
+    {% else %}حدث خطأ غير متوقع. يرجى المحاولة مجدداً.{% endif %}</p>
+    <a href="{{ url_for('index') }}" class="btn-primary">
+        <i class="bi bi-house"></i> العودة للرئيسية
+    </a>
+</div>
+{% endblock %}

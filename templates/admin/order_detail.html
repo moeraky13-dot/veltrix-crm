@@ -1,0 +1,97 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}تفاصيل الطلب — VELTRIX CRM{% endblock %}
+{% block breadcrumb %}تفاصيل الطلب #{{ order['order_number'] }}{% endblock %}
+{% block content %}
+
+{% set status_labels = {'pending': ('في الانتظار','warning'), 'confirmed': ('مؤكد','info'), 'processing': ('قيد التجهيز','primary'), 'shipped': ('شُحن','info'), 'delivered': ('تم التسليم','success'), 'cancelled': ('ملغي','danger')} %}
+{% set lbl = status_labels.get(order['status'], (order['status'],'secondary')) %}
+
+<div class="admin-page-header">
+    <div>
+        <h2><i class="bi bi-receipt"></i> طلب رقم #{{ order['order_number'] }}</h2>
+        <p style="color:#94a3b8">{{ order['created_at'][:16] }}</p>
+    </div>
+    <span class="status-badge badge-{{ lbl[1] }} status-big">{{ lbl[0] }}</span>
+</div>
+
+<div class="order-admin-grid">
+
+    <!-- المنتجات -->
+    <div class="admin-card">
+        <h3><i class="bi bi-box-seam"></i> المنتجات المطلوبة</h3>
+        {% for item in items %}
+            <div class="order-item-admin">
+                <span class="oi-icon">{{ get_icon(item['product_name']) }}</span>
+                <div class="oi-info">
+                    <b>{{ item['product_name'] }}</b>
+                    <small>{{ item['quantity'] }} × {{ "%.2f"|format(item['price']) }} ج</small>
+                </div>
+                <span class="oi-total"><b>{{ "%.2f"|format(item['quantity'] * item['price']) }} ج</b></span>
+            </div>
+        {% endfor %}
+        <div class="order-totals-admin">
+            <div class="otr"><span>المجموع الفرعي</span><span>{{ "%.2f"|format(order['subtotal']) }} ج</span></div>
+            <div class="otr"><span>رسوم الشحن</span><span>{% if order['shipping_cost']==0 %}مجاني{% else %}{{ "%.2f"|format(order['shipping_cost']) }} ج{% endif %}</span></div>
+            <div class="otr otr-total"><span><b>الإجمالي</b></span><span><b>{{ "%.2f"|format(order['total']) }} ج</b></span></div>
+        </div>
+    </div>
+
+    <div class="order-admin-sidebar">
+
+        <!-- تحديث الحالة -->
+        <div class="admin-card">
+            <h3><i class="bi bi-arrow-repeat"></i> تحديث الحالة</h3>
+            <form method="POST" action="{{ url_for('admin_update_order_status', oid=order['id']) }}">
+                <div class="fg">
+                    <label>الحالة الجديدة</label>
+                    <select name="status" class="f-input">
+                        {% for s_val, s_lbl in status_labels.items() %}
+                            <option value="{{ s_val }}" {% if s_val==order['status'] %}selected{% endif %}>
+                                {{ s_lbl[0] }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="fg">
+                    <label>ملاحظة للعميل (اختياري)</label>
+                    <textarea name="admin_notes" rows="2" placeholder="مثال: سيتم الشحن غداً">{{ order['admin_notes'] or '' }}</textarea>
+                </div>
+                <button type="submit" class="btn-admin-primary w-full">
+                    <i class="bi bi-check-circle"></i> تحديث الحالة
+                </button>
+            </form>
+        </div>
+
+        <!-- معلومات الشحن -->
+        <div class="admin-card">
+            <h3><i class="bi bi-truck"></i> معلومات الشحن</h3>
+            <div class="info-rows">
+                <div class="info-row"><span>الاسم:</span><b>{{ order['shipping_name'] }}</b></div>
+                <div class="info-row"><span>الجوال:</span><b>{{ order['shipping_phone'] }}</b></div>
+                <div class="info-row"><span>المدينة:</span><b>{{ order['shipping_city'] }}</b></div>
+                <div class="info-row"><span>العنوان:</span><b>{{ order['shipping_address'] }}</b></div>
+                {% if order['notes'] %}
+                    <div class="info-row"><span>ملاحظات:</span><b>{{ order['notes'] }}</b></div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- معلومات العميل -->
+        <div class="admin-card">
+            <h3><i class="bi bi-person"></i> العميل</h3>
+            <div class="info-rows">
+                <div class="info-row"><span>الاسم:</span><b>{{ order['user_name'] }}</b></div>
+                <div class="info-row"><span>البريد:</span><b>{{ order['user_email'] }}</b></div>
+                {% if order['user_phone'] %}
+                    <div class="info-row"><span>الجوال:</span><b>{{ order['user_phone'] }}</b></div>
+                {% endif %}
+            </div>
+            <a href="{{ url_for('admin_customer_detail', uid=order['user_id']) }}" class="btn-admin-ghost w-full" style="margin-top:10px">
+                عرض ملف العميل
+            </a>
+        </div>
+    </div>
+</div>
+
+<a href="{{ url_for('admin_orders') }}" class="btn-back"><i class="bi bi-arrow-right"></i> العودة للطلبات</a>
+{% endblock %}

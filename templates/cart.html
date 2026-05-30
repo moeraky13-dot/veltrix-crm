@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% block title %}سلة التسوق — VELTRIX CRM{% endblock %}
+{% block content %}
+<div class="page-wrap">
+    <h1 class="page-title"><i class="bi bi-cart3"></i> سلة التسوق</h1>
+
+    {% if items %}
+        <div class="cart-layout">
+            <div class="cart-list">
+                {% for item in items %}
+                    <div class="cart-row">
+                        <div class="cart-item-img">
+                            {% if item['image'] and item['image'] != 'default.jpg' %}
+                                <img src="{{ item['image'] }}" alt="{{ item['name'] }}" loading="lazy">
+                            {% else %}
+                                <span>{{ get_icon(item['name']) }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="cart-item-info">
+                            <h3><a href="{{ url_for('product_detail', pid=item['product_id']) }}">{{ item['name'] }}</a></h3>
+                            {% if item['brand'] %}<p class="cart-brand">{{ item['brand'] }}</p>{% endif %}
+                            <p class="cart-unit-price">{{ "%.2f"|format(item['price']) }} ج / قطعة</p>
+                            {% if item['stock'] <= 5 and item['stock'] > 0 %}
+                                <p class="warn-stock"><i class="bi bi-exclamation-triangle"></i> باقي {{ item['stock'] }} فقط</p>
+                            {% endif %}
+                        </div>
+                        <div class="cart-item-actions">
+                            <form action="{{ url_for('cart_update', item_id=item['id']) }}" method="post" class="inline-form">
+                                <div class="qty-ctrl">
+                                    <button type="button" onclick="adjQty(this,-1,{{ item['stock'] }})">−</button>
+                                    <input type="number" name="quantity" value="{{ item['quantity'] }}"
+                                           min="1" max="{{ item['stock'] }}" onchange="this.form.submit()" class="qty-in">
+                                    <button type="button" onclick="adjQty(this,1,{{ item['stock'] }})">+</button>
+                                </div>
+                            </form>
+                            <div class="cart-subtotal">{{ "%.2f"|format(item['subtotal']) }} ج</div>
+                            <form action="{{ url_for('cart_remove', item_id=item['id']) }}" method="post" class="inline-form">
+                                <button type="submit" class="btn-del"><i class="bi bi-trash3"></i></button>
+                            </form>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <div class="cart-summary-box">
+                <h3>ملخص الطلب</h3>
+                <div class="sum-row"><span>المجموع الفرعي</span><span>{{ "%.2f"|format(subtotal) }} ج</span></div>
+                <div class="sum-row">
+                    <span>الشحن</span>
+                    <span>{% if shipping == 0 %}<b class="green">مجاني 🎉</b>{% else %}{{ "%.2f"|format(shipping) }} ج{% endif %}</span>
+                </div>
+                {% if shipping > 0 %}
+                    <div class="free-shipping-tip">
+                        <i class="bi bi-truck"></i> أضف {{ "%.2f"|format(500 - subtotal) }} ج للحصول على شحن مجاني
+                    </div>
+                {% endif %}
+                <hr>
+                <div class="sum-row total-row">
+                    <span><b>الإجمالي</b></span>
+                    <span><b class="total-big">{{ "%.2f"|format(grand_total) }} ج</b></span>
+                </div>
+                <a href="{{ url_for('checkout') }}" class="btn-checkout">
+                    <i class="bi bi-bag-check-fill"></i> إتمام الطلب
+                </a>
+                <a href="{{ url_for('products') }}" class="btn-continue">
+                    <i class="bi bi-arrow-right"></i> مواصلة التسوق
+                </a>
+            </div>
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">🛒</div>
+            <h3>السلة فارغة</h3>
+            <p>لم تضف أي منتجات بعد</p>
+            <a href="{{ url_for('products') }}" class="btn-primary">تصفح المنتجات</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+function adjQty(btn, d, max) {
+    const form = btn.closest('.inline-form');
+    const inp = form.querySelector('.qty-in');
+    let v = parseInt(inp.value) + d;
+    if (v < 1) v = 1;
+    if (v > max) v = max;
+    inp.value = v;
+    form.submit();
+}
+</script>
+{% endblock %}

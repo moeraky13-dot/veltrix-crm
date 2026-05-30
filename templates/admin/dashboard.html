@@ -1,0 +1,162 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}لوحة التحكم — VELTRIX CRM{% endblock %}
+{% block breadcrumb %}لوحة التحكم{% endblock %}
+{% block content %}
+
+<!-- بطاقات الإحصائيات -->
+<div class="stats-grid">
+    <div class="stat-card blue">
+        <div class="sc-icon"><i class="bi bi-people-fill"></i></div>
+        <div class="sc-info">
+            <h3>{{ total_users }}</h3>
+            <p>إجمالي العملاء</p>
+        </div>
+        <a href="{{ url_for('admin_customers') }}" class="sc-link">عرض الكل →</a>
+    </div>
+    <div class="stat-card green">
+        <div class="sc-icon"><i class="bi bi-bag-check-fill"></i></div>
+        <div class="sc-info">
+            <h3>{{ total_orders }}</h3>
+            <p>إجمالي الطلبات</p>
+        </div>
+        <a href="{{ url_for('admin_orders') }}" class="sc-link">عرض الكل →</a>
+    </div>
+    <div class="stat-card orange">
+        <div class="sc-icon"><i class="bi bi-box-seam-fill"></i></div>
+        <div class="sc-info">
+            <h3>{{ total_products }}</h3>
+            <p>المنتجات النشطة</p>
+        </div>
+        <a href="{{ url_for('admin_products') }}" class="sc-link">عرض الكل →</a>
+    </div>
+    <div class="stat-card purple">
+        <div class="sc-icon"><i class="bi bi-cash-coin"></i></div>
+        <div class="sc-info">
+            <h3>{{ "%.0f"|format(total_revenue) }} <small>ج</small></h3>
+            <p>إجمالي الإيرادات</p>
+        </div>
+    </div>
+</div>
+
+<!-- التنبيهات -->
+{% if pending_count > 0 %}
+    <div class="alert-box orange">
+        <i class="bi bi-bell-fill"></i>
+        يوجد <strong>{{ pending_count }}</strong> طلب جديد في انتظار التأكيد
+        <a href="{{ url_for('admin_orders', status='pending') }}">عرض الطلبات المعلقة →</a>
+    </div>
+{% endif %}
+
+{% if low_stock %}
+    <div class="alert-box red">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <strong>{{ low_stock|length }}</strong> منتجات بمخزون منخفض (أقل من 5 قطع)
+        <div class="low-stock-list">
+            {% for p in low_stock %}
+                <span class="low-stock-item">{{ p['name'] }}: {{ p['stock'] }} قطع</span>
+            {% endfor %}
+        </div>
+    </div>
+{% endif %}
+
+<div class="dashboard-grid">
+
+    <!-- أكثر المنتجات مبيعاً -->
+    <div class="dash-card">
+        <div class="dash-card-header">
+            <h3><i class="bi bi-trophy-fill"></i> أكثر المنتجات مبيعاً</h3>
+            <a href="{{ url_for('admin_products') }}">عرض الكل</a>
+        </div>
+        <div class="top-products-list">
+            {% for i, p in enumerate(top_products) %}
+                <div class="top-product-row">
+                    <span class="rank rank-{{ i+1 }}">{{ i+1 }}</span>
+                    <div class="tp-icon">{{ get_icon(p['name']) }}</div>
+                    <div class="tp-info">
+                        <b>{{ p['name'] }}</b>
+                        <small>{{ p['brand'] or '' }}</small>
+                    </div>
+                    <div class="tp-stats">
+                        <span class="sales-count">{{ p['sales_count'] }} مبيعة</span>
+                        <span class="tp-price">{{ "%.0f"|format(p['price']) }} ج</span>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- آخر الطلبات -->
+    <div class="dash-card">
+        <div class="dash-card-header">
+            <h3><i class="bi bi-clock-history"></i> آخر الطلبات</h3>
+            <a href="{{ url_for('admin_orders') }}">عرض الكل</a>
+        </div>
+        {% set status_labels = {'pending': ('في الانتظار','warning'), 'confirmed': ('مؤكد','info'), 'processing': ('قيد التجهيز','primary'), 'shipped': ('شُحن','info'), 'delivered': ('تم التسليم','success'), 'cancelled': ('ملغي','danger')} %}
+        <div class="recent-orders-list">
+            {% for o in recent_orders %}
+                {% set lbl = status_labels.get(o['status'], ('غير معروف','secondary')) %}
+                <div class="recent-order-row">
+                    <div class="ro-left">
+                        <a href="{{ url_for('admin_order_detail', oid=o['id']) }}" class="order-num-link">
+                            #{{ o['order_number'] }}
+                        </a>
+                        <small>{{ o['user_name'] }}</small>
+                    </div>
+                    <div class="ro-right">
+                        <span class="status-badge badge-{{ lbl[1] }}">{{ lbl[0] }}</span>
+                        <span class="ro-total">{{ "%.0f"|format(o['total']) }} ج</span>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- إحصائيات الطلبات -->
+    <div class="dash-card">
+        <div class="dash-card-header">
+            <h3><i class="bi bi-pie-chart-fill"></i> الطلبات حسب الحالة</h3>
+        </div>
+        {% set status_labels_map = {'pending': ('في الانتظار','warning'), 'confirmed': ('مؤكد','info'), 'processing': ('قيد التجهيز','primary'), 'shipped': ('شُحن','info'), 'delivered': ('تم التسليم','success'), 'cancelled': ('ملغي','danger')} %}
+        <div class="status-breakdown">
+            {% for row in orders_by_status %}
+                {% set lbl = status_labels_map.get(row['status'], (row['status'],'secondary')) %}
+                {% set pct = (row['cnt'] / total_orders * 100)|int if total_orders > 0 else 0 %}
+                <div class="status-bar-row">
+                    <span class="status-bar-label">{{ lbl[0] }}</span>
+                    <div class="status-bar-track">
+                        <div class="status-bar-fill fill-{{ lbl[1] }}" style="width: {{ pct }}%"></div>
+                    </div>
+                    <span class="status-bar-count">{{ row['cnt'] }}</span>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- آخر العملاء -->
+    <div class="dash-card">
+        <div class="dash-card-header">
+            <h3><i class="bi bi-person-plus-fill"></i> أحدث العملاء</h3>
+            <a href="{{ url_for('admin_customers') }}">عرض الكل</a>
+        </div>
+        <div class="recent-customers-list">
+            {% for u in recent_users %}
+                <div class="recent-customer-row">
+                    <div class="cust-avatar">{{ u['name'][0] }}</div>
+                    <div class="cust-info">
+                        <a href="{{ url_for('admin_customer_detail', uid=u['id']) }}">{{ u['name'] }}</a>
+                        <small>{{ u['email'] }}</small>
+                    </div>
+                    <small class="cust-date">{{ u['created_at'][:10] }}</small>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// تعريف enumerate لـ Jinja إن لم يكن متاحاً
+</script>
+{% endblock %}

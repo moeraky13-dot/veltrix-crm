@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block title %}طلباتي — VELTRIX CRM{% endblock %}
+{% block content %}
+<div class="page-wrap">
+    <h1 class="page-title"><i class="bi bi-bag-check"></i> طلباتي</h1>
+
+    {% set status_labels = {'pending': ('في الانتظار','warning'), 'confirmed': ('مؤكد','info'), 'processing': ('قيد التجهيز','primary'), 'shipped': ('تم الشحن','info'), 'delivered': ('تم التسليم','success'), 'cancelled': ('ملغي','danger')} %}
+
+    {% if orders %}
+        <div class="orders-list">
+            {% for order in orders %}
+                {% set lbl = status_labels.get(order['status'], ('غير معروف','secondary')) %}
+                <div class="order-card">
+                    <div class="order-header">
+                        <div>
+                            <span class="order-num">#{{ order['order_number'] }}</span>
+                            <span class="status-badge badge-{{ lbl[1] }}">{{ lbl[0] }}</span>
+                        </div>
+                        <div class="order-date">{{ order['created_at'][:16] }}</div>
+                    </div>
+                    <div class="order-body">
+                        <div class="order-info-row">
+                            <span><i class="bi bi-geo-alt"></i> {{ order['shipping_city'] }}</span>
+                            <span><i class="bi bi-cash"></i> {{ "%.2f"|format(order['total']) }} ج</span>
+                        </div>
+                    </div>
+                    <div class="order-footer">
+                        <a href="{{ url_for('order_detail', oid=order['id']) }}" class="btn-view-order">
+                            <i class="bi bi-eye"></i> عرض التفاصيل
+                        </a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">📦</div>
+            <h3>لا توجد طلبات بعد</h3>
+            <p>ابدأ التسوق الآن!</p>
+            <a href="{{ url_for('products') }}" class="btn-primary">تسوق الآن</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

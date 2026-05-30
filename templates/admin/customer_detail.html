@@ -1,0 +1,104 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}ملف العميل — VELTRIX CRM{% endblock %}
+{% block breadcrumb %}ملف العميل: {{ user['name'] }}{% endblock %}
+{% block content %}
+
+{% set status_labels = {'pending': ('في الانتظار','warning'), 'confirmed': ('مؤكد','info'), 'processing': ('قيد التجهيز','primary'), 'shipped': ('شُحن','info'), 'delivered': ('تم التسليم','success'), 'cancelled': ('ملغي','danger')} %}
+
+<div class="customer-profile-header">
+    <div class="cust-profile-avatar">{{ user['name'][0] }}</div>
+    <div class="cust-profile-info">
+        <h2>{{ user['name'] }}</h2>
+        <p>{{ user['email'] }}</p>
+        {% if user['phone'] %}<p><i class="bi bi-telephone"></i> {{ user['phone'] }}</p>{% endif %}
+        <p><i class="bi bi-calendar3"></i> عضو منذ {{ user['created_at'][:10] }}</p>
+        {% if not user['is_active'] %}
+            <span class="status-badge badge-danger">حساب محظور</span>
+        {% endif %}
+    </div>
+    <div class="cust-profile-stats">
+        <div class="cpstat">
+            <div class="cpstat-val">{{ orders|length }}</div>
+            <div class="cpstat-lbl">طلب</div>
+        </div>
+        <div class="cpstat">
+            <div class="cpstat-val">{{ "%.0f"|format(orders|sum(attribute='total')) }}</div>
+            <div class="cpstat-lbl">ريال إجمالي</div>
+        </div>
+        <div class="cpstat">
+            <div class="cpstat-val">{{ purchased|length }}</div>
+            <div class="cpstat-lbl">منتج مشترى</div>
+        </div>
+    </div>
+</div>
+
+<div class="customer-detail-grid">
+
+    <!-- سجل الطلبات -->
+    <div class="admin-card">
+        <h3><i class="bi bi-clock-history"></i> سجل الطلبات</h3>
+        {% if orders %}
+            <div class="admin-table-wrap">
+                <table class="admin-table">
+                    <thead>
+                        <tr><th>رقم الطلب</th><th>التاريخ</th><th>الإجمالي</th><th>الحالة</th><th></th></tr>
+                    </thead>
+                    <tbody>
+                        {% for o in orders %}
+                            {% set lbl = status_labels.get(o['status'], (o['status'],'secondary')) %}
+                            <tr>
+                                <td><b>#{{ o['order_number'] }}</b></td>
+                                <td><small>{{ o['created_at'][:10] }}</small></td>
+                                <td>{{ "%.2f"|format(o['total']) }} ج</td>
+                                <td><span class="status-badge badge-{{ lbl[1] }}">{{ lbl[0] }}</span></td>
+                                <td>
+                                    <a href="{{ url_for('admin_order_detail', oid=o['id']) }}" class="btn-act btn-view">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state-sm">لا توجد طلبات بعد</div>
+        {% endif %}
+    </div>
+
+    <!-- المنتجات المشتراة -->
+    <div class="admin-card">
+        <h3><i class="bi bi-bag-heart"></i> المنتجات التي اشتراها</h3>
+        {% if purchased %}
+            <div class="purchased-list">
+                {% for item in purchased %}
+                    <div class="purchased-row">
+                        <div class="pr-icon">{{ get_icon(item['product_name']) }}</div>
+                        <div class="pr-info">
+                            <b>{{ item['product_name'] }}</b>
+                            <small>{{ item['total_qty'] }} قطعة — {{ "%.2f"|format(item['total_amount']) }} ج</small>
+                        </div>
+                        <div class="pr-qty">× {{ item['total_qty'] }}</div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state-sm">لم يشتر أي منتج بعد</div>
+        {% endif %}
+    </div>
+
+</div>
+
+<div class="form-actions" style="margin-top:20px">
+    <form action="{{ url_for('admin_toggle_customer', uid=user['id']) }}" method="post"
+          onsubmit="return confirm('تغيير حالة هذا الحساب؟')">
+        <button type="submit" class="{% if user['is_active'] %}btn-admin-danger{% else %}btn-admin-primary{% endif %}">
+            <i class="bi bi-{% if user['is_active'] %}slash-circle{% else %}check-circle{% endif %}"></i>
+            {% if user['is_active'] %}تعطيل الحساب{% else %}تفعيل الحساب{% endif %}
+        </button>
+    </form>
+    <a href="{{ url_for('admin_customers') }}" class="btn-admin-ghost">
+        <i class="bi bi-arrow-right"></i> العودة
+    </a>
+</div>
+{% endblock %}

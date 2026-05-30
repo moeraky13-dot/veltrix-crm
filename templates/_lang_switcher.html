@@ -1,0 +1,11 @@
+<aside class="lang-switcher" aria-label="{{ _('lang_label') }}">
+    <span class="lang-switcher-label">{{ _('lang_label') }}</span>
+    <a href="{{ url_for('set_language', lang='ar') }}"
+       class="lang-btn lang-btn-ar {% if current_lang == 'ar' %}active{% endif %}"
+       title="{{ _('lang_ar') }}"
+       aria-current="{% if current_lang == 'ar' %}true{% else %}false{% endif %}">AR</a>
+    <a href="{{ url_for('set_language', lang='en') }}"
+       class="lang-btn lang-btn-en {% if current_lang == 'en' %}active{% endif %}"
+       title="{{ _('lang_en') }}"
+       aria-current="{% if current_lang == 'en' %}true{% else %}false{% endif %}">EN</a>
+</aside>

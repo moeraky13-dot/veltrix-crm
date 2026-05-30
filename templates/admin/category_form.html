@@ -1,0 +1,64 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}{% if category %}تعديل فئة{% else %}فئة جديدة{% endif %} — VELTRIX CRM{% endblock %}
+{% block breadcrumb %}
+    <a href="{{ url_for('admin_categories') }}">الفئات</a> /
+    {% if category %}تعديل{% else %}إضافة{% endif %}
+{% endblock %}
+{% block content %}
+
+<div class="admin-page-header">
+    <h2><i class="bi bi-tag"></i> {% if category %}تعديل الفئة{% else %}فئة جديدة{% endif %}</h2>
+    <a href="{{ url_for('admin_categories') }}" class="btn-admin-ghost"><i class="bi bi-arrow-right"></i> العودة</a>
+</div>
+
+<div class="admin-form-card">
+    <form method="POST">
+        <div class="form-grid-2">
+            <div class="fg">
+                <label>اسم الفئة *</label>
+                <input type="text" name="name" required minlength="2"
+                       value="{{ category['name'] if category else '' }}" placeholder="مثال: هواتف ذكية">
+            </div>
+            <div class="fg">
+                <label>المعرّف (slug) {% if category and category['is_system'] %}(ثابت){% endif %}</label>
+                <input type="text" name="slug"
+                       value="{{ category['slug'] if category else '' }}"
+                       placeholder="smartphones"
+                       {% if category and category['is_system'] %}readonly{% endif %}>
+            </div>
+            <div class="fg">
+                <label>الأيقونة</label>
+                <input type="text" name="icon" maxlength="8"
+                       value="{{ category['icon'] if category else '📦' }}" placeholder="📱">
+            </div>
+            <div class="fg">
+                <label>ترتيب العرض</label>
+                <input type="number" name="sort_order" min="0"
+                       value="{{ category['sort_order'] if category else 0 }}">
+            </div>
+            <div class="fg" style="grid-column: 1 / -1;">
+                <label>رابط صورة الفئة (اختياري)</label>
+                <input type="url" name="image_url"
+                       value="{{ category['image_url'] if category else '' }}"
+                       placeholder="https://...">
+            </div>
+            <div class="fg" style="grid-column: 1 / -1;">
+                <label>وصف قصير</label>
+                <textarea name="description" rows="3">{{ category['description'] if category else '' }}</textarea>
+            </div>
+            <div class="fg">
+                <label class="toggle-label">
+                    <input type="checkbox" name="is_active" {% if not category or category['is_active'] %}checked{% endif %}>
+                    ظاهرة في المتجر
+                </label>
+            </div>
+        </div>
+
+        <div class="form-actions" style="margin-top:24px;display:flex;gap:12px;">
+            <button type="submit" class="btn-admin-primary">حفظ</button>
+            <a href="{{ url_for('admin_categories') }}" class="btn-admin-ghost">إلغاء</a>
+        </div>
+    </form>
+</div>
+
+{% endblock %}

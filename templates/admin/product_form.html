@@ -1,0 +1,100 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}{% if product %}تعديل منتج{% else %}إضافة منتج{% endif %} — VELTRIX CRM{% endblock %}
+{% block breadcrumb %}{% if product %}تعديل منتج{% else %}إضافة منتج جديد{% endif %}{% endblock %}
+{% block content %}
+
+<div class="admin-page-header">
+    <h2><i class="bi bi-{% if product %}pencil{% else %}plus-circle{% endif %}"></i>
+        {% if product %}تعديل: {{ product['name'] }}{% else %}إضافة منتج جديد{% endif %}
+    </h2>
+    <a href="{{ url_for('admin_products') }}" class="btn-admin-ghost">
+        <i class="bi bi-arrow-right"></i> العودة
+    </a>
+</div>
+
+<div class="admin-form-card">
+    <form method="POST" enctype="multipart/form-data">
+
+        <div class="form-grid-2">
+            <div class="fg">
+                <label>اسم المنتج *</label>
+                <input type="text" name="name" required
+                       value="{{ product['name'] if product else '' }}"
+                       placeholder="مثال: iPhone 15 Pro Max">
+            </div>
+            <div class="fg">
+                <label>البراند / الشركة المصنعة</label>
+                <input type="text" name="brand"
+                       value="{{ product['brand'] if product else '' }}"
+                       placeholder="مثال: Apple, Samsung">
+            </div>
+        </div>
+
+        <div class="fg">
+            <label>وصف المنتج</label>
+            <textarea name="description" rows="4"
+                      placeholder="اكتب وصفاً تفصيلياً للمنتج...">{{ product['description'] if product else '' }}</textarea>
+        </div>
+
+        <div class="form-grid-3">
+            <div class="fg">
+                <label>السعر الحالي (ج) *</label>
+                <input type="number" name="price" step="0.01" min="0" required
+                       value="{{ product['price'] if product else '' }}"
+                       placeholder="0.00">
+            </div>
+            <div class="fg">
+                <label>السعر القديم (للخصم)</label>
+                <input type="number" name="old_price" step="0.01" min="0"
+                       value="{{ product['old_price'] if product and product['old_price'] else '' }}"
+                       placeholder="اتركه فارغاً إن لم يكن هناك خصم">
+            </div>
+            <div class="fg">
+                <label>الكمية في المخزون</label>
+                <input type="number" name="stock" min="0"
+                       value="{{ product['stock'] if product else 0 }}">
+            </div>
+        </div>
+
+        <div class="form-grid-2">
+            <div class="fg">
+                <label>الفئة</label>
+                <select name="category_id">
+                    <option value="">بدون فئة</option>
+                    {% for cat in categories %}
+                        <option value="{{ cat['id'] }}"
+                            {% if product and product['category_id']==cat['id'] %}selected{% endif %}>
+                            {{ cat['icon'] }} {{ cat['name'] }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="fg checkboxes-col">
+                <label>خيارات إضافية</label>
+                <label class="toggle-label">
+                    <input type="checkbox" name="is_featured"
+                           {% if product and product['is_featured'] %}checked{% endif %}>
+                    <span class="toggle-slider"></span>
+                    منتج مميز (يظهر في الصفحة الرئيسية)
+                </label>
+                {% if product %}
+                    <label class="toggle-label">
+                        <input type="checkbox" name="is_active"
+                               {% if product['is_active'] %}checked{% endif %}>
+                        <span class="toggle-slider"></span>
+                        منتج نشط (يظهر للعملاء)
+                    </label>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn-admin-primary">
+                <i class="bi bi-check-circle"></i>
+                {% if product %}حفظ التعديلات{% else %}إضافة المنتج{% endif %}
+            </button>
+            <a href="{{ url_for('admin_products') }}" class="btn-admin-ghost">إلغاء</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
