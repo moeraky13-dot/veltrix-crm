@@ -14,7 +14,7 @@
 </head>
 <body class="lang-{{ current_lang }} {% block body_class %}{% endblock %}">
 
-{% include '_lang_switcher.html' %}
+{% block lang_switcher %}{% endblock %}
 
 <div class="announcement-bar">
     <span>🚀 {{ _('announce_1') }}</span>
