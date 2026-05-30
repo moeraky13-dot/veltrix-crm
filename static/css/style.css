@@ -1103,3 +1103,36 @@ body.auth-lux-body .flash-wrap { max-width: 420px; margin: 16px auto 0; padding:
   .features-bar { flex-direction: column; }
   .feature { border-left: none; border-bottom: 1px solid var(--dark3); }
 }
+
+/* ===== NAVBAR LANG SWITCHER ===== */
+.nav-lang-switcher {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-inline-start: 12px;
+    border-inline-start: 1px solid rgba(255,255,255,0.15);
+    padding-inline-start: 12px;
+}
+
+.nav-lang-switcher .lang-btn {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    padding: 4px 9px;
+    border-radius: 6px;
+    color: rgba(255,255,255,0.6);
+    text-decoration: none;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+}
+
+.nav-lang-switcher .lang-btn:hover {
+    color: #fff;
+    background: rgba(255,255,255,0.1);
+}
+
+.nav-lang-switcher .lang-btn.active {
+    color: #fff;
+    background: rgba(255,255,255,0.18);
+    border-color: rgba(255,255,255,0.25);
+}

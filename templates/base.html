@@ -14,7 +14,7 @@
 </head>
 <body class="lang-{{ current_lang }} {% block body_class %}{% endblock %}">
 
-{% block lang_switcher %}{% endblock %}
+
 
 <div class="announcement-bar">
     <span>🚀 {{ _('announce_1') }}</span>
@@ -68,6 +68,10 @@
                 <a href="{{ url_for('login') }}" class="nav-link"><i class="bi bi-person"></i> {{ _('nav_login') }}</a>
                 <a href="{{ url_for('register') }}" class="btn-register">{{ _('nav_register') }}</a>
             {% endif %}
+            <div class="nav-lang-switcher">
+                <a href="{{ url_for('set_language', lang='ar') }}" class="lang-btn {% if current_lang == 'ar' %}active{% endif %}">AR</a>
+                <a href="{{ url_for('set_language', lang='en') }}" class="lang-btn {% if current_lang == 'en' %}active{% endif %}">EN</a>
+            </div>
         </nav>
     </div>
 
