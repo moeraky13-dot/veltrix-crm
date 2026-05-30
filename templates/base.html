@@ -41,7 +41,7 @@
                     <a href="{{ url_for('admin_dashboard') }}" class="nav-link admin-link">
                         <i class="bi bi-speedometer2"></i> {{ _('nav_dashboard') }}
                     </a>
-                    <a href="{{ url_for('admin_orders') }}" class="nav-link orders-link">
+                    <a href="{{ url_for('admin_orders') }}" class="nav-link orders-link" style="position:relative">
                         <i class="bi bi-bag-check"></i> الطلبات
                         {% if pending_orders_count > 0 %}
                             <span class="cart-badge">{{ pending_orders_count }}</span>
