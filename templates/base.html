@@ -68,9 +68,22 @@
                 <a href="{{ url_for('login') }}" class="nav-link"><i class="bi bi-person"></i> {{ _('nav_login') }}</a>
                 <a href="{{ url_for('register') }}" class="btn-register">{{ _('nav_register') }}</a>
             {% endif %}
-            <div class="nav-lang-switcher">
-                <a href="{{ url_for('set_language', lang='ar') }}" class="lang-btn {% if current_lang == 'ar' %}active{% endif %}">AR</a>
-                <a href="{{ url_for('set_language', lang='en') }}" class="lang-btn {% if current_lang == 'en' %}active{% endif %}">EN</a>
+            <div class="nav-quick-tools">
+                {% if current_user and current_user['is_admin'] %}
+                <a href="{{ url_for('admin_reports') }}" class="quick-tool-btn" title="تقارير المبيعات">
+                    <i class="bi bi-bar-chart-line"></i>
+                    <span>تقارير</span>
+                </a>
+                <a href="{{ url_for('admin_reviews') }}" class="quick-tool-btn" title="التقييمات">
+                    <i class="bi bi-star-half"></i>
+                    <span>تقييمات</span>
+                </a>
+                <div class="tool-divider"></div>
+                {% endif %}
+                <div class="nav-lang-switcher">
+                    <a href="{{ url_for('set_language', lang='ar') }}" class="lang-btn {% if current_lang == 'ar' %}active{% endif %}">AR</a>
+                    <a href="{{ url_for('set_language', lang='en') }}" class="lang-btn {% if current_lang == 'en' %}active{% endif %}">EN</a>
+                </div>
             </div>
         </nav>
     </div>

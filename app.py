@@ -484,8 +484,23 @@ def product_detail(pid):
             (product['category_id'], pid)
         ).fetchall()
 
+    # جلب التقييمات
+    reviews = db.execute("""
+        SELECT r.*, u.name as user_name
+        FROM reviews r JOIN users u ON u.id=r.user_id
+        WHERE r.product_id=? ORDER BY r.created_at DESC
+    """, (pid,)).fetchall()
+    avg_rating = db.execute(
+        "SELECT ROUND(AVG(rating),1) FROM reviews WHERE product_id=?", (pid,)
+    ).fetchone()[0] or 0
+    user_reviewed = False
+    if session.get("user_id"):
+        user_reviewed = bool(db.execute(
+            "SELECT id FROM reviews WHERE product_id=? AND user_id=?",
+            (pid, session["user_id"])
+        ).fetchone())
     db.close()
-    return render_template('product_detail.html', product=product, similar=similar)
+    return render_template("product_detail.html", product=product, similar=similar, reviews=reviews, avg_rating=avg_rating, user_reviewed=user_reviewed)
 
 
 # ============================================================
@@ -1213,3 +1228,134 @@ if __name__ == '__main__':
     print(f"  📦  لوحة التحكم: {phone_site_url}/admin")
     print("="*55 + "\n")
     app.run(debug=True, host='0.0.0.0', port=5000)
+
+# ============================================================
+#  تقارير المبيعات
+# ============================================================
+
+@app.route('/admin/reports')
+@admin_required
+def admin_reports():
+    db = get_db()
+
+    # إجمالي الإيرادات
+    total_revenue = db.execute(
+        "SELECT COALESCE(SUM(total),0) FROM orders WHERE status!='cancelled'"
+    ).fetchone()[0]
+
+    # إيرادات آخر 30 يوم يومياً
+    revenue_30days = db.execute("""
+        SELECT DATE(created_at) as day, SUM(total) as revenue, COUNT(*) as cnt
+        FROM orders WHERE status!='cancelled'
+        AND created_at >= DATE('now', '-30 days')
+        GROUP BY DATE(created_at) ORDER BY day
+    """).fetchall()
+
+    # أفضل المنتجات مبيعاً
+    top_products = db.execute("""
+        SELECT p.name, p.price, p.sales_count,
+               COALESCE(SUM(oi.quantity * oi.price), 0) as revenue
+        FROM products p
+        LEFT JOIN order_items oi ON oi.product_id = p.id
+        LEFT JOIN orders o ON o.id = oi.order_id AND o.status != 'cancelled'
+        WHERE p.is_active=1
+        GROUP BY p.id ORDER BY p.sales_count DESC LIMIT 10
+    """).fetchall()
+
+    # توزيع الأوردرات بالحالة
+    orders_by_status = db.execute(
+        "SELECT status, COUNT(*) as cnt FROM orders GROUP BY status"
+    ).fetchall()
+
+    # إيرادات كل شهر آخر 6 شهور
+    revenue_monthly = db.execute("""
+        SELECT strftime('%Y-%m', created_at) as month,
+               SUM(total) as revenue, COUNT(*) as cnt
+        FROM orders WHERE status!='cancelled'
+        AND created_at >= DATE('now', '-6 months')
+        GROUP BY month ORDER BY month
+    """).fetchall()
+
+    # أكثر العملاء شراءً
+    top_customers = db.execute("""
+        SELECT u.name, u.email, COUNT(o.id) as orders_count,
+               COALESCE(SUM(o.total),0) as total_spent
+        FROM users u
+        JOIN orders o ON o.user_id = u.id AND o.status != 'cancelled'
+        GROUP BY u.id ORDER BY total_spent DESC LIMIT 5
+    """).fetchall()
+
+    db.close()
+    return render_template('admin/reports.html',
+                           total_revenue=total_revenue,
+                           revenue_30days=revenue_30days,
+                           top_products=top_products,
+                           orders_by_status=orders_by_status,
+                           revenue_monthly=revenue_monthly,
+                           top_customers=top_customers)
+
+
+# ============================================================
+#  نظام التقييمات
+# ============================================================
+
+@app.route('/product/<int:pid>/review', methods=['POST'])
+@login_required
+def add_review(pid):
+    rating = int(request.form.get('rating', 0))
+    comment = request.form.get('comment', '').strip()
+    lang = _current_lang()
+    if rating < 1 or rating > 5:
+        flash('تقييم غير صحيح', 'danger')
+        return redirect(url_for('product_detail', pid=pid))
+    db = get_db()
+    # تأكد إن المنتج موجود
+    product = db.execute("SELECT id FROM products WHERE id=?", (pid,)).fetchone()
+    if not product:
+        db.close()
+        flash('المنتج غير موجود', 'danger')
+        return redirect(url_for('products'))
+    # منع التقييم المكرر
+    existing = db.execute(
+        "SELECT id FROM reviews WHERE product_id=? AND user_id=?",
+        (pid, session['user_id'])
+    ).fetchone()
+    if existing:
+        flash('قمت بتقييم هذا المنتج من قبل', 'warning')
+        db.close()
+        return redirect(url_for('product_detail', pid=pid))
+    db.execute(
+        "INSERT INTO reviews (product_id, user_id, rating, comment) VALUES (?,?,?,?)",
+        (pid, session['user_id'], rating, comment)
+    )
+    db.commit()
+    db.close()
+    flash('شكراً! تم إضافة تقييمك', 'success')
+    return redirect(url_for('product_detail', pid=pid))
+
+
+@app.route('/admin/reviews')
+@admin_required
+def admin_reviews():
+    db = get_db()
+    reviews = db.execute("""
+        SELECT r.*, u.name as user_name, p.name as product_name
+        FROM reviews r
+        JOIN users u ON u.id = r.user_id
+        JOIN products p ON p.id = r.product_id
+        ORDER BY r.created_at DESC
+    """).fetchall()
+    db.close()
+    return render_template('admin/reviews.html', reviews=reviews)
+
+
+@app.route('/admin/reviews/<int:rid>/delete', methods=['POST'])
+@admin_required
+def delete_review(rid):
+    db = get_db()
+    db.execute("DELETE FROM reviews WHERE id=?", (rid,))
+    db.commit()
+    db.close()
+    flash('تم حذف التقييم', 'success')
+    return redirect(url_for('admin_reviews'))
+

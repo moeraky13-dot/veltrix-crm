@@ -1,0 +1,184 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}تقارير المبيعات — VELTRIX{% endblock %}
+{% block content %}
+
+<div class="admin-page-header">
+    <h1><i class="bi bi-bar-chart-line"></i> تقارير المبيعات</h1>
+</div>
+
+<!-- KPI Cards -->
+<div class="report-kpis">
+    <div class="kpi-card">
+        <i class="bi bi-currency-dollar"></i>
+        <div>
+            <span class="kpi-label">إجمالي الإيرادات</span>
+            <span class="kpi-value">{{ "%.0f"|format(total_revenue) }} ج.م</span>
+        </div>
+    </div>
+    <div class="kpi-card">
+        <i class="bi bi-bag-check"></i>
+        <div>
+            <span class="kpi-label">إجمالي الطلبات</span>
+            <span class="kpi-value">
+                {% set total_orders = namespace(n=0) %}
+                {% for s in orders_by_status %}{% set total_orders.n = total_orders.n + s['cnt'] %}{% endfor %}
+                {{ total_orders.n }}
+            </span>
+        </div>
+    </div>
+    <div class="kpi-card">
+        <i class="bi bi-graph-up-arrow"></i>
+        <div>
+            <span class="kpi-label">إيرادات آخر 30 يوم</span>
+            <span class="kpi-value">
+                {% set rev30 = namespace(n=0) %}
+                {% for r in revenue_30days %}{% set rev30.n = rev30.n + r['revenue'] %}{% endfor %}
+                {{ "%.0f"|format(rev30.n) }} ج.م
+            </span>
+        </div>
+    </div>
+    <div class="kpi-card">
+        <i class="bi bi-people"></i>
+        <div>
+            <span class="kpi-label">كبار العملاء</span>
+            <span class="kpi-value">{{ top_customers|length }}</span>
+        </div>
+    </div>
+</div>
+
+<div class="report-grid">
+
+    <!-- إيرادات آخر 30 يوم -->
+    <div class="report-card wide">
+        <h3><i class="bi bi-calendar3"></i> إيرادات آخر 30 يوم</h3>
+        {% if revenue_30days %}
+        <div class="chart-wrap">
+            <canvas id="chart30"></canvas>
+        </div>
+        {% else %}
+        <p class="no-data">لا توجد بيانات بعد</p>
+        {% endif %}
+    </div>
+
+    <!-- توزيع الطلبات بالحالة -->
+    <div class="report-card">
+        <h3><i class="bi bi-pie-chart"></i> حالة الطلبات</h3>
+        <div class="status-list">
+            {% set status_labels = {'pending': 'قيد الانتظار', 'processing': 'قيد التجهيز', 'shipped': 'تم الشحن', 'delivered': 'تم التسليم', 'cancelled': 'ملغي'} %}
+            {% set status_colors = {'pending': '#f59e0b', 'processing': '#3b82f6', 'shipped': '#8b5cf6', 'delivered': '#10b981', 'cancelled': '#ef4444'} %}
+            {% for s in orders_by_status %}
+            <div class="status-row">
+                <span class="status-dot" style="background:{{ status_colors.get(s['status'], '#888') }}"></span>
+                <span class="status-name">{{ status_labels.get(s['status'], s['status']) }}</span>
+                <span class="status-count">{{ s['cnt'] }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- أفضل المنتجات -->
+    <div class="report-card wide">
+        <h3><i class="bi bi-trophy"></i> أفضل المنتجات مبيعاً</h3>
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>المنتج</th>
+                    <th>السعر</th>
+                    <th>المبيعات</th>
+                    <th>الإيراد</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for i, p in enumerate(top_products, 1) %}
+                <tr>
+                    <td><span class="rank {% if i<=3 %}top-rank{% endif %}">{{ i }}</span></td>
+                    <td>{{ p['name'] }}</td>
+                    <td>{{ "%.0f"|format(p['price']) }} ج.م</td>
+                    <td>{{ p['sales_count'] }}</td>
+                    <td>{{ "%.0f"|format(p['revenue']) }} ج.م</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" class="no-data">لا توجد مبيعات بعد</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- كبار العملاء -->
+    <div class="report-card">
+        <h3><i class="bi bi-star"></i> كبار العملاء</h3>
+        <div class="customers-list">
+            {% for c in top_customers %}
+            <div class="customer-row">
+                <div class="cust-avatar">{{ c['name'][0] }}</div>
+                <div class="cust-info">
+                    <strong>{{ c['name'] }}</strong>
+                    <small>{{ c['orders_count'] }} طلب</small>
+                </div>
+                <span class="cust-spent">{{ "%.0f"|format(c['total_spent']) }} ج.م</span>
+            </div>
+            {% else %}
+            <p class="no-data">لا توجد بيانات بعد</p>
+            {% endfor %}
+        </div>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+{% if revenue_30days %}
+const ctx = document.getElementById('chart30').getContext('2d');
+new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: [{% for r in revenue_30days %}'{{ r["day"] }}'{% if not loop.last %},{% endif %}{% endfor %}],
+        datasets: [{
+            label: 'الإيرادات (ج.م)',
+            data: [{% for r in revenue_30days %}{{ r["revenue"] }}{% if not loop.last %},{% endif %}{% endfor %}],
+            backgroundColor: 'rgba(99,102,241,0.7)',
+            borderRadius: 6,
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true } }
+    }
+});
+{% endif %}
+</script>
+
+<style>
+.report-kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:16px; margin-bottom:24px; }
+.kpi-card { background:var(--surface,#fff); border-radius:14px; padding:20px; display:flex; align-items:center; gap:16px; box-shadow:0 2px 12px rgba(0,0,0,.06); }
+.kpi-card i { font-size:2rem; color:#6366f1; }
+.kpi-label { display:block; font-size:12px; color:#888; }
+.kpi-value { display:block; font-size:1.5rem; font-weight:700; color:#1e1e2e; }
+.report-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+.report-card { background:var(--surface,#fff); border-radius:14px; padding:20px; box-shadow:0 2px 12px rgba(0,0,0,.06); }
+.report-card.wide { grid-column:span 2; }
+.report-card h3 { font-size:1rem; font-weight:700; margin-bottom:16px; color:#1e1e2e; }
+.chart-wrap { height:220px; }
+.status-list { display:flex; flex-direction:column; gap:10px; }
+.status-row { display:flex; align-items:center; gap:10px; }
+.status-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+.status-name { flex:1; font-size:14px; }
+.status-count { font-weight:700; font-size:14px; }
+.report-table { width:100%; border-collapse:collapse; font-size:14px; }
+.report-table th { text-align:right; padding:8px 12px; border-bottom:2px solid #f1f1f4; color:#888; font-weight:600; }
+.report-table td { padding:10px 12px; border-bottom:1px solid #f1f1f4; }
+.rank { display:inline-block; width:24px; height:24px; border-radius:50%; background:#f1f1f4; text-align:center; line-height:24px; font-size:12px; font-weight:700; }
+.top-rank { background:#6366f1; color:#fff; }
+.customers-list { display:flex; flex-direction:column; gap:12px; }
+.customer-row { display:flex; align-items:center; gap:12px; }
+.cust-avatar { width:38px; height:38px; border-radius:50%; background:#6366f1; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:16px; flex-shrink:0; }
+.cust-info { flex:1; }
+.cust-info strong { display:block; font-size:14px; }
+.cust-info small { color:#888; font-size:12px; }
+.cust-spent { font-weight:700; color:#10b981; font-size:14px; }
+.no-data { color:#aaa; text-align:center; padding:20px; }
+@media(max-width:768px){ .report-grid{grid-template-columns:1fr;} .report-card.wide{grid-column:span 1;} }
+</style>
+{% endblock %}
