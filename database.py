@@ -79,6 +79,12 @@ def get_db():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row  # النتائج كـ dict
     conn.execute("PRAGMA foreign_keys = ON")
+    # auto-migrate: add shipping_country column if missing
+    try:
+        conn.execute("ALTER TABLE orders ADD COLUMN shipping_country TEXT DEFAULT ''")
+        conn.commit()
+    except Exception:
+        pass
     # auto-migrate: create reviews table if missing
     conn.execute("""
         CREATE TABLE IF NOT EXISTS reviews (
@@ -192,6 +198,7 @@ def init_db():
             shipping_phone TEXT,
             shipping_address TEXT,
             shipping_city TEXT,
+            shipping_country TEXT DEFAULT '',
             subtotal REAL DEFAULT 0,
             shipping_cost REAL DEFAULT 0,
             total REAL DEFAULT 0,

@@ -647,6 +647,7 @@ def checkout():
         phone = request.form.get('shipping_phone', '').strip()
         address = request.form.get('shipping_address', '').strip()
         city = request.form.get('shipping_city', '').strip()
+        country = request.form.get('shipping_country', 'مصر').strip()
         notes = request.form.get('notes', '').strip()
 
         if not all([name, phone, address, city]):
@@ -667,10 +668,10 @@ def checkout():
         db.execute("""
             INSERT INTO orders
             (order_number, user_id, status, shipping_name, shipping_phone,
-             shipping_address, shipping_city, notes, subtotal, shipping_cost, total)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?)
+             shipping_address, shipping_city, shipping_country, notes, subtotal, shipping_cost, total)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
         """, (order_num, session['user_id'], 'pending',
-              name, phone, address, city, notes, subtotal, shipping, total))
+              name, phone, address, city, country, notes, subtotal, shipping, total))
         order_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
 
         for item in items:
