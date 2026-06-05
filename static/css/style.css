@@ -40,54 +40,6 @@ button { cursor: pointer; border: none; background: none; font-family: var(--fon
 input, select, textarea { font-family: var(--font); }
 ul { list-style: none; }
 
-/* مؤشر ماوس مخصص */
-.lux-cursor,
-.lux-cursor-dot {
-  position: fixed;
-  top: 0;
-  left: 0;
-  pointer-events: none;
-  z-index: 10000;
-  opacity: 0;
-  transition: opacity .25s ease, transform .2s ease, background .2s ease, border-color .2s ease;
-}
-.lux-cursor {
-  width: 28px;
-  height: 28px;
-  margin-left: -14px;
-  margin-top: -14px;
-  border-radius: 50%;
-  border: 1px solid rgba(165,180,252,.55);
-  background: radial-gradient(circle at 35% 30%, rgba(255,255,255,.16), rgba(99,102,241,.05));
-  box-shadow: 0 0 14px rgba(99,102,241,.2);
-  backdrop-filter: blur(2px);
-}
-.lux-cursor::before {
-  content: "";
-  position: absolute;
-  inset: -3px;
-  border-radius: inherit;
-  border: 1px solid rgba(245,158,11,.2);
-  filter: blur(.4px);
-  animation: cursorSpin 10s linear infinite;
-}
-@keyframes cursorSpin {
-  to { transform: rotate(360deg); }
-}
-.lux-cursor-dot { display: none !important; }
-body.cursor-ready .lux-cursor { opacity: 1; }
-body.cursor-hover .lux-cursor {
-  transform: scale(1.18);
-  border-color: rgba(245,158,11,.72);
-  background: radial-gradient(circle at 40% 40%, rgba(245,158,11,.2), rgba(99,102,241,.08));
-}
-body.cursor-down .lux-cursor { transform: scale(.9); }
-@media (pointer: fine) {
-  body, a, button, input, select, textarea, .btn-primary, .btn-add-cart, .cat-card { cursor: none !important; }
-}
-@media (pointer: coarse) {
-  .lux-cursor, .lux-cursor-dot { display: none; }
-}
 
 /* مبدّل اللغة — ثابت يسار الشاشة (دائماً ظاهر) */
 .lang-switcher {
@@ -835,14 +787,7 @@ body.auth-lux-body {
 body.auth-lux-body .announcement-bar,
 body.auth-lux-body .main-header,
 body.auth-lux-body .site-footer { display: none !important; }
-/* المؤشر المخصص يبقى ظاهراً — إخفاؤه كان يترك cursor: none بدون بديل */
-@media (pointer: fine) {
-  body.auth-lux-body,
-  body.auth-lux-body a,
-  body.auth-lux-body button,
-  body.auth-lux-body input,
-  body.auth-lux-body select,
-  body.auth-lux-body textarea { cursor: none !important; }
+
   body.auth-lux-body #hit { cursor: grab !important; }
 body.auth-lux-body #hit:active { cursor: grabbing !important; }
 }
