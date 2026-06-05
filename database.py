@@ -20,9 +20,12 @@ _BUNDLED_DB = os.path.join(os.path.dirname(__file__), 'veltrix.db')
 _TMP_DB = '/tmp/veltrix.db'
 
 def _ensure_db_writable():
-    """Copy the bundled DB to /tmp if not already there."""
-    if not os.path.exists(_TMP_DB) and os.path.exists(_BUNDLED_DB):
-        shutil.copy2(_BUNDLED_DB, _TMP_DB)
+    """Copy the bundled DB to /tmp, always refresh if bundled is newer."""
+    if os.path.exists(_BUNDLED_DB):
+        if not os.path.exists(_TMP_DB):
+            shutil.copy2(_BUNDLED_DB, _TMP_DB)
+        elif os.path.getmtime(_BUNDLED_DB) > os.path.getmtime(_TMP_DB):
+            shutil.copy2(_BUNDLED_DB, _TMP_DB)
 
 _ensure_db_writable()
 DB_PATH = _TMP_DB if os.path.exists('/tmp') else _BUNDLED_DB
