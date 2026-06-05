@@ -514,70 +514,72 @@ def product_detail(pid):
 # ============================================================
 
 @app.route('/cart')
-@login_required
 def cart():
     """عرض السلة"""
+    user_id = session.get('user_id')
     db = get_db()
-    items = db.execute("""
-        SELECT ci.*, p.name, p.price, p.stock, p.brand, p.image,
-               (ci.quantity * p.price) as subtotal
-        FROM cart_items ci
-        JOIN products p ON p.id=ci.product_id
-        WHERE ci.user_id=?
-    """, (session['user_id'],)).fetchall()
+    if user_id:
+        rows = db.execute("""
+            SELECT ci.id, ci.quantity, p.id as product_id, p.name, p.price, p.stock, p.brand, p.image,
+                   (ci.quantity * p.price) as subtotal
+            FROM cart_items ci JOIN products p ON p.id=ci.product_id WHERE ci.user_id=?
+        """, (user_id,)).fetchall()
+        items = [dict(r) for r in rows]
+    else:
+        guest_cart = session.get('guest_cart', {})
+        items = []
+        for pid, qty in guest_cart.items():
+            p = db.execute("SELECT * FROM products WHERE id=? AND is_active=1", (int(pid),)).fetchone()
+            if p:
+                items.append({'id': f'g_{pid}', 'product_id': p['id'], 'name': p['name'],
+                    'price': p['price'], 'stock': p['stock'], 'brand': p['brand'],
+                    'image': p['image'], 'quantity': qty, 'subtotal': p['price'] * qty})
     db.close()
-
     subtotal = sum(i['subtotal'] for i in items)
     shipping = 0 if subtotal >= 500 else (50 if subtotal > 0 else 0)
     grand_total = subtotal + shipping
-
-    return render_template('cart.html', items=items,
-                           subtotal=subtotal, shipping=shipping, grand_total=grand_total)
+    return render_template('cart.html', items=items, subtotal=subtotal, shipping=shipping, grand_total=grand_total)
 
 
 @app.route('/cart/add/<int:pid>', methods=['POST'])
-@login_required
 def cart_add(pid):
-    """إضافة منتج للسلة"""
+    """إضافة منتج للسلة — للزوار والمسجلين"""
     qty = int(request.form.get('quantity', 1))
     db = get_db()
-    product = db.execute(
-        "SELECT * FROM products WHERE id=? AND is_active=1", (pid,)
-    ).fetchone()
-
+    product = db.execute("SELECT * FROM products WHERE id=? AND is_active=1", (pid,)).fetchone()
     if not product:
         flash('المنتج غير متاح', 'danger')
         db.close()
         return redirect(url_for('products'))
-
     if product['stock'] < qty:
         flash(f"المخزون المتاح: {product['stock']} فقط", 'warning')
         db.close()
         return redirect(url_for('product_detail', pid=pid))
-
-    existing = db.execute(
-        "SELECT * FROM cart_items WHERE user_id=? AND product_id=?",
-        (session['user_id'], pid)
-    ).fetchone()
-
-    if existing:
-        new_qty = existing['quantity'] + qty
+    user_id = session.get('user_id')
+    if user_id:
+        existing = db.execute("SELECT * FROM cart_items WHERE user_id=? AND product_id=?", (user_id, pid)).fetchone()
+        if existing:
+            new_qty = existing['quantity'] + qty
+            if new_qty > product['stock']:
+                flash(f"لا يمكن إضافة أكثر من {product['stock']} قطعة", 'warning')
+            else:
+                db.execute("UPDATE cart_items SET quantity=? WHERE id=?", (new_qty, existing['id']))
+                flash(f"تم تحديث الكمية في السلة ✅", 'success')
+        else:
+            db.execute("INSERT INTO cart_items (user_id, product_id, quantity) VALUES (?,?,?)", (user_id, pid, qty))
+            flash(f"تمت إضافة '{product['name']}' للسلة 🛒", 'success')
+        db.commit()
+    else:
+        guest_cart = session.get('guest_cart', {})
+        key = str(pid)
+        new_qty = guest_cart.get(key, 0) + qty
         if new_qty > product['stock']:
             flash(f"لا يمكن إضافة أكثر من {product['stock']} قطعة", 'warning')
         else:
-            db.execute(
-                "UPDATE cart_items SET quantity=? WHERE id=?",
-                (new_qty, existing['id'])
-            )
-            flash(f"تم تحديث الكمية في السلة ✅", 'success')
-    else:
-        db.execute(
-            "INSERT INTO cart_items (user_id, product_id, quantity) VALUES (?,?,?)",
-            (session['user_id'], pid, qty)
-        )
-        flash(f"تمت إضافة \"{product['name']}\" للسلة 🛒", 'success')
-
-    db.commit()
+            guest_cart[key] = new_qty
+            session['guest_cart'] = guest_cart
+            session.modified = True
+            flash(f"تمت إضافة '{product['name']}' للسلة 🛒", 'success')
     db.close()
     return redirect(url_for('cart'))
 
@@ -607,16 +609,20 @@ def cart_update(item_id):
 
 
 @app.route('/cart/remove/<int:item_id>', methods=['POST'])
-@login_required
 def cart_remove(item_id):
     """حذف منتج من السلة"""
-    db = get_db()
-    db.execute(
-        "DELETE FROM cart_items WHERE id=? AND user_id=?",
-        (item_id, session['user_id'])
-    )
-    db.commit()
-    db.close()
+    user_id = session.get('user_id')
+    if user_id:
+        db = get_db()
+        db.execute("DELETE FROM cart_items WHERE id=? AND user_id=?", (item_id, user_id))
+        db.commit()
+        db.close()
+    else:
+        guest_cart = session.get('guest_cart', {})
+        if str(item_id) in guest_cart:
+            del guest_cart[str(item_id)]
+            session['guest_cart'] = guest_cart
+            session.modified = True
     flash('تم حذف المنتج من السلة', 'info')
     return redirect(url_for('cart'))
 
@@ -1460,4 +1466,27 @@ def complete_pending_order():
 
     flash(f"تم تقديم طلبك بنجاح! رقم الطلب: {order_num} 🎉", 'success')
     return redirect(url_for('order_detail', oid=order_id))
+
+
+# ============================================================
+#  سلة الزوار - تحديث وحذف
+# ============================================================
+@app.route('/cart/guest/update/<int:pid>', methods=['POST'])
+def cart_guest_update(pid):
+    qty = int(request.form.get('quantity', 1))
+    guest_cart = session.get('guest_cart', {})
+    if qty <= 0:
+        guest_cart.pop(str(pid), None)
+        flash('تم حذف المنتج من السلة', 'info')
+    else:
+        db = get_db()
+        p = db.execute("SELECT stock FROM products WHERE id=?", (pid,)).fetchone()
+        db.close()
+        if p and qty <= p['stock']:
+            guest_cart[str(pid)] = qty
+        else:
+            flash('الكمية المطلوبة غير متاحة', 'warning')
+    session['guest_cart'] = guest_cart
+    session.modified = True
+    return redirect(url_for('cart'))
 
