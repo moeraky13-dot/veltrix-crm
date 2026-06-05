@@ -59,29 +59,20 @@
             </div>
 
             {% if product['stock'] > 0 %}
-                {% if current_user %}
-                    <form action="{{ url_for('cart_add', pid=product['id']) }}" method="post" class="add-cart-form">
-                        <div class="qty-row">
-                            <label>الكمية:</label>
-                            <div class="qty-ctrl">
-                                <button type="button" onclick="chQty(-1,{{ product['stock'] }})">−</button>
-                                <input type="number" name="quantity" id="qtyInput" value="1"
-                                       min="1" max="{{ product['stock'] }}" class="qty-in">
-                                <button type="button" onclick="chQty(1,{{ product['stock'] }})">+</button>
-                            </div>
+                <form action="{{ url_for('cart_add', pid=product['id']) }}" method="post" class="add-cart-form">
+                    <div class="qty-row">
+                        <label>الكمية:</label>
+                        <div class="qty-ctrl">
+                            <button type="button" onclick="chQty(-1,{{ product['stock'] }})">−</button>
+                            <input type="number" name="quantity" id="qtyInput" value="1"
+                                   min="1" max="{{ product['stock'] }}" class="qty-in">
+                            <button type="button" onclick="chQty(1,{{ product['stock'] }})">+</button>
                         </div>
-                        <button type="submit" class="btn-cart-big">
-                            <i class="bi bi-cart-plus-fill"></i> أضف إلى السلة
-                        </button>
-                    </form>
-                {% else %}
-                    <div class="login-prompt">
-                        <p>سجل دخولك لإضافة المنتج للسلة</p>
-                        <a href="{{ url_for('login') }}" class="btn-cart-big">
-                            <i class="bi bi-box-arrow-in-right"></i> تسجيل الدخول للشراء
-                        </a>
                     </div>
-                {% endif %}
+                    <button type="submit" class="btn-cart-big">
+                        <i class="bi bi-cart-plus-fill"></i> أضف إلى السلة
+                    </button>
+                </form>
             {% else %}
                 <button class="btn-cart-big" disabled><i class="bi bi-x-circle"></i> نفد المخزون</button>
             {% endif %}

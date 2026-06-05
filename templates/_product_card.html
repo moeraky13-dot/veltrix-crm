@@ -36,13 +36,11 @@
             {% elif p['stock']<=5 %}<i class="bi bi-exclamation-circle"></i> باقي {{ p['stock'] }} فقط
             {% else %}<i class="bi bi-check-circle"></i> متوفر{% endif %}
         </div>
-        {% if current_user and p['stock'] > 0 %}
+        {% if p['stock'] > 0 %}
             <form action="{{ url_for('cart_add', pid=p['id']) }}" method="post">
                 <input type="hidden" name="quantity" value="1">
                 <button type="submit" class="btn-add-cart"><i class="bi bi-cart-plus"></i> أضف للسلة</button>
             </form>
-        {% elif not current_user %}
-            <a href="{{ url_for('login') }}" class="btn-add-cart"><i class="bi bi-cart-plus"></i> أضف للسلة</a>
         {% else %}
             <button class="btn-add-cart" disabled>نفد المخزون</button>
         {% endif %}
