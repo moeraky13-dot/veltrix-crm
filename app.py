@@ -260,6 +260,9 @@ def login():
             db.close()
 
             flash(translate(_current_lang(), 'flash_welcome', name=user['name']) + ' 👋', 'success')
+            # لو كان عنده أوردر معلق (جاء من checkout) أكمله
+            if session.get('pending_order'):
+                return redirect(url_for('complete_pending_order'))
             next_page = request.args.get('next')
             if next_page:
                 return redirect(next_page)
@@ -316,6 +319,9 @@ def register():
 
         start_user_session(user)
         flash(translate(lang, 'flash_register_ok', name=name) + ' 🎉', 'success')
+        # لو كان عنده أوردر معلق (جاء من checkout) أكمله
+        if session.get('pending_order'):
+            return redirect(url_for('complete_pending_order'))
         return redirect(url_for('index'))
 
     return render_template('register.html')
@@ -620,16 +626,31 @@ def cart_remove(item_id):
 # ============================================================
 
 @app.route('/checkout', methods=['GET', 'POST'])
-@login_required
 def checkout():
-    """صفحة إتمام الطلب"""
+    """صفحة إتمام الطلب — متاحة للزوار، التسجيل مطلوب فقط عند التأكيد"""
     db = get_db()
-    items = db.execute("""
-        SELECT ci.*, p.name, p.price, p.stock, p.brand,
-               (ci.quantity * p.price) as subtotal
-        FROM cart_items ci JOIN products p ON p.id=ci.product_id
-        WHERE ci.user_id=?
-    """, (session['user_id'],)).fetchall()
+    user_id = session.get('user_id')
+
+    # جلب العناصر من السلة (مسجل أو زائر عبر session مؤقتة)
+    if user_id:
+        items = db.execute("""
+            SELECT ci.*, p.name, p.price, p.stock, p.brand,
+                   (ci.quantity * p.price) as subtotal
+            FROM cart_items ci JOIN products p ON p.id=ci.product_id
+            WHERE ci.user_id=?
+        """, (user_id,)).fetchall()
+    else:
+        # زائر: السلة في session
+        guest_cart = session.get('guest_cart', {})
+        items = []
+        for pid, qty in guest_cart.items():
+            p = db.execute("SELECT * FROM products WHERE id=? AND is_active=1", (int(pid),)).fetchone()
+            if p:
+                items.append({
+                    'product_id': p['id'], 'name': p['name'], 'price': p['price'],
+                    'stock': p['stock'], 'brand': p['brand'],
+                    'quantity': qty, 'subtotal': p['price'] * qty
+                })
 
     if not items:
         flash('السلة فارغة!', 'warning')
@@ -639,16 +660,15 @@ def checkout():
     subtotal = sum(i['subtotal'] for i in items)
     shipping = 0 if subtotal >= 500 else 50
     total = subtotal + shipping
-
     user = get_current_user()
 
     if request.method == 'POST':
-        name = request.form.get('shipping_name', '').strip()
-        phone = request.form.get('shipping_phone', '').strip()
+        name    = request.form.get('shipping_name', '').strip()
+        phone   = request.form.get('shipping_phone', '').strip()
         address = request.form.get('shipping_address', '').strip()
-        city = request.form.get('shipping_city', '').strip()
+        city    = request.form.get('shipping_city', '').strip()
         country = request.form.get('shipping_country', 'مصر').strip()
-        notes = request.form.get('notes', '').strip()
+        notes   = request.form.get('notes', '').strip()
 
         if not all([name, phone, address, city]):
             flash('يرجى تعبئة جميع حقول الشحن', 'danger')
@@ -656,6 +676,18 @@ def checkout():
             return render_template('checkout.html', items=items,
                                    subtotal=subtotal, shipping=shipping,
                                    total=total, user=user)
+
+        # لو الزائر ضغط تأكيد بدون تسجيل — احفظ البيانات في session وأظهر modal
+        if not user_id:
+            session['pending_order'] = {
+                'name': name, 'phone': phone, 'address': address,
+                'city': city, 'country': country, 'notes': notes
+            }
+            db.close()
+            return render_template('checkout.html', items=items,
+                                   subtotal=subtotal, shipping=shipping,
+                                   total=total, user=None,
+                                   show_auth_modal=True)
 
         # التحقق من المخزون
         for item in items:
@@ -670,14 +702,13 @@ def checkout():
             (order_number, user_id, status, shipping_name, shipping_phone,
              shipping_address, shipping_city, shipping_country, notes, subtotal, shipping_cost, total)
             VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
-        """, (order_num, session['user_id'], 'pending',
+        """, (order_num, user_id, 'pending',
               name, phone, address, city, country, notes, subtotal, shipping, total))
         order_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
 
         for item in items:
             db.execute("""
-                INSERT INTO order_items
-                (order_id, product_id, quantity, price, product_name)
+                INSERT INTO order_items (order_id, product_id, quantity, price, product_name)
                 VALUES (?,?,?,?,?)
             """, (order_id, item['product_id'], item['quantity'],
                   item['price'], item['name']))
@@ -686,17 +717,17 @@ def checkout():
                 (item['quantity'], item['quantity'], item['product_id'])
             )
 
-        db.execute("DELETE FROM cart_items WHERE user_id=?", (session['user_id'],))
+        db.execute("DELETE FROM cart_items WHERE user_id=?", (user_id,))
         db.commit()
         db.close()
-
+        session.pop('pending_order', None)
         flash(f"تم تقديم طلبك بنجاح! رقم الطلب: {order_num} 🎉", 'success')
         return redirect(url_for('order_detail', oid=order_id))
 
     db.close()
     return render_template('checkout.html', items=items,
                            subtotal=subtotal, shipping=shipping,
-                           total=total, user=user)
+                           total=total, user=user, show_auth_modal=False)
 
 
 @app.route('/my-orders')
@@ -1359,4 +1390,74 @@ def delete_review(rid):
     db.close()
     flash('تم حذف التقييم', 'success')
     return redirect(url_for('admin_reviews'))
+
+
+# ============================================================
+#  إكمال الأوردر المعلق بعد تسجيل الدخول / إنشاء الحساب
+# ============================================================
+@app.route('/complete-order')
+@login_required
+def complete_pending_order():
+    pending = session.get('pending_order')
+    if not pending:
+        return redirect(url_for('checkout'))
+
+    user_id = session['user_id']
+    db = get_db()
+
+    # جلب عناصر السلة
+    items = db.execute("""
+        SELECT ci.*, p.name, p.price, p.stock,
+               (ci.quantity * p.price) as subtotal
+        FROM cart_items ci JOIN products p ON p.id=ci.product_id
+        WHERE ci.user_id=?
+    """, (user_id,)).fetchall()
+
+    if not items:
+        session.pop('pending_order', None)
+        flash('السلة فارغة!', 'warning')
+        db.close()
+        return redirect(url_for('products'))
+
+    subtotal = sum(i['subtotal'] for i in items)
+    shipping = 0 if subtotal >= 500 else 50
+    total    = subtotal + shipping
+
+    # التحقق من المخزون
+    for item in items:
+        if item['stock'] < item['quantity']:
+            flash(f"المخزون غير كافٍ: {item['name']}", 'danger')
+            db.close()
+            return redirect(url_for('cart'))
+
+    order_num = generate_order_number()
+    db.execute("""
+        INSERT INTO orders
+        (order_number, user_id, status, shipping_name, shipping_phone,
+         shipping_address, shipping_city, shipping_country, notes, subtotal, shipping_cost, total)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
+    """, (order_num, user_id, 'pending',
+          pending['name'], pending['phone'], pending['address'],
+          pending['city'], pending['country'], pending['notes'],
+          subtotal, shipping, total))
+    order_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
+
+    for item in items:
+        db.execute("""
+            INSERT INTO order_items (order_id, product_id, quantity, price, product_name)
+            VALUES (?,?,?,?,?)
+        """, (order_id, item['product_id'], item['quantity'],
+              item['price'], item['name']))
+        db.execute(
+            "UPDATE products SET stock=stock-?, sales_count=sales_count+? WHERE id=?",
+            (item['quantity'], item['quantity'], item['product_id'])
+        )
+
+    db.execute("DELETE FROM cart_items WHERE user_id=?", (user_id,))
+    db.commit()
+    db.close()
+    session.pop('pending_order', None)
+
+    flash(f"تم تقديم طلبك بنجاح! رقم الطلب: {order_num} 🎉", 'success')
+    return redirect(url_for('order_detail', oid=order_id))
 

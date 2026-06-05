@@ -78,6 +78,99 @@
         </div>
     </div>
 </div>
+
+{% if show_auth_modal %}
+<!-- ===== Auth Modal ===== -->
+<div class="auth-modal-overlay" id="authModal">
+    <div class="auth-modal">
+        <div class="auth-modal-header">
+            <h3>🔐 خطوة أخيرة!</h3>
+            <p>سجّل دخولك أو أنشئ حساباً لتأكيد طلبك</p>
+        </div>
+
+        <div class="auth-tabs">
+            <button class="auth-tab active" onclick="switchTab('login')">تسجيل الدخول</button>
+            <button class="auth-tab" onclick="switchTab('register')">حساب جديد</button>
+        </div>
+
+        <!-- Login Form -->
+        <form id="loginForm" class="auth-form" method="post" action="{{ url_for('login') }}">
+            <input type="email" name="email" placeholder="البريد الإلكتروني" required class="auth-input">
+            <input type="password" name="password" placeholder="كلمة المرور" required class="auth-input">
+            <button type="submit" class="auth-submit-btn">دخول وتأكيد الطلب →</button>
+        </form>
+
+        <!-- Register Form -->
+        <form id="registerForm" class="auth-form" method="post" action="{{ url_for('register') }}" style="display:none">
+            <input type="text" name="name" placeholder="الاسم الكامل" required class="auth-input">
+            <input type="email" name="email" placeholder="البريد الإلكتروني" required class="auth-input">
+            <input type="tel" name="phone" placeholder="رقم الهاتف" class="auth-input">
+            <input type="password" name="password" placeholder="كلمة المرور (8 أحرف على الأقل)" required class="auth-input">
+            <input type="password" name="confirm_password" placeholder="تأكيد كلمة المرور" required class="auth-input">
+            <button type="submit" class="auth-submit-btn">إنشاء حساب وتأكيد الطلب →</button>
+        </form>
+
+        <a href="{{ url_for('checkout') }}" class="auth-back">← تعديل بيانات الشحن</a>
+    </div>
+</div>
+
+<style>
+.auth-modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 9999; padding: 20px;
+    backdrop-filter: blur(4px);
+}
+.auth-modal {
+    background: #fff;
+    border-radius: 20px;
+    padding: 36px 32px;
+    width: 100%; max-width: 420px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    animation: slideUp 0.3s ease;
+}
+@keyframes slideUp {
+    from { transform: translateY(30px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+}
+.auth-modal-header { text-align: center; margin-bottom: 24px; }
+.auth-modal-header h3 { font-size: 1.4rem; font-weight: 800; margin-bottom: 6px; }
+.auth-modal-header p  { color: #888; font-size: 14px; }
+.auth-tabs { display: flex; gap: 8px; margin-bottom: 24px; background: #f5f5f8; border-radius: 10px; padding: 4px; }
+.auth-tab {
+    flex: 1; padding: 10px; border: none; border-radius: 8px;
+    background: transparent; font-weight: 600; font-size: 14px;
+    cursor: pointer; transition: all 0.2s; color: #888;
+}
+.auth-tab.active { background: #fff; color: #6366f1; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+.auth-form { display: flex; flex-direction: column; gap: 12px; }
+.auth-input {
+    border: 1.5px solid #e5e7eb; border-radius: 10px;
+    padding: 12px 16px; font-size: 14px; font-family: inherit;
+    transition: border-color 0.2s; width: 100%; box-sizing: border-box;
+}
+.auth-input:focus { outline: none; border-color: #6366f1; }
+.auth-submit-btn {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: #fff; border: none; padding: 14px;
+    border-radius: 12px; font-size: 15px; font-weight: 700;
+    cursor: pointer; transition: opacity 0.2s; margin-top: 4px;
+}
+.auth-submit-btn:hover { opacity: 0.88; }
+.auth-back { display: block; text-align: center; margin-top: 16px; color: #888; font-size: 13px; text-decoration: none; }
+.auth-back:hover { color: #6366f1; }
+</style>
+
+<script>
+function switchTab(tab) {
+    document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+    event.target.classList.add('active');
+    document.getElementById('loginForm').style.display  = tab === 'login'    ? 'flex' : 'none';
+    document.getElementById('registerForm').style.display = tab === 'register' ? 'flex' : 'none';
+}
+</script>
+{% endif %}
 {% endblock %}
 {% block extra_js %}
 <script>
